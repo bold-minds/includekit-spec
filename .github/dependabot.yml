@@ -1,0 +1,29 @@
+version: 2
+updates:
+  # Codegen Go module
+  - package-ecosystem: "gomod"
+    directory: "/codegen"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  
+  # Go packages module
+  - package-ecosystem: "gomod"
+    directory: "/pkgs/go"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  
+  # TypeScript tests (has npm dependencies)
+  - package-ecosystem: "npm"
+    directory: "/pkgs/ts/tests"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3

@@ -1,0 +1,84 @@
+name: Release
+
+# Temporarily disabled - will be released with consuming SDK
+on:
+  workflow_dispatch:  # Manual trigger only
+  # push:
+  #   tags:
+  #     - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Install go-jsonschema
+        run: go install github.com/atombender/go-jsonschema@latest
+      
+      - name: Install TypeScript dependencies
+        run: |
+          cd pkgs/ts/tests
+          npm ci
+      
+      - name: Build codegen tool
+        run: |
+          cd codegen
+          go build -o ../bin/codegen .
+      
+      - name: Run full test suite
+        run: ./scripts/test.sh
+      
+      - name: Update package versions
+        run: |
+          cd pkgs/ts/types
+          npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
+          
+          cd ../tests
+          npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version
+      
+      - name: Build TypeScript testkit
+        run: |
+          cd pkgs/ts/tests
+          npm run build
+      
+      - name: Publish to npm - @includekit/types
+        run: |
+          cd pkgs/ts/types
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Publish to npm - @includekit/types-testkit
+        run: |
+          cd pkgs/ts/tests
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          files: |
+            schema/v0-1-0.json
+            bin/codegen

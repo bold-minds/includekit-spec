@@ -1,0 +1,44 @@
+{
+  "dependencies": {
+    "@includekit/types": "file:../types"
+  },
+  "description": "IncludeKit Universal Format - Runtime validators, JCS, and shapeId (testkit)",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "keywords": [
+    "includekit",
+    "types",
+    "validator",
+    "jcs",
+    "shapeid",
+    "testkit"
+  ],
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "name": "@includekit/types-testkit",
+  "repository": {
+    "directory": "packages/ts-testkit",
+    "type": "git",
+    "url": "https://github.com/bold-minds/ik-spec.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node --test *.test.js"
+  },
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "0.1.0"
+}

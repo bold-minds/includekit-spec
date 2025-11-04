@@ -1,0 +1,34 @@
+{
+  "description": "IncludeKit Universal Specification",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    }
+  },
+  "files": [
+    "index.d.ts",
+    "README.md"
+  ],
+  "keywords": [
+    "includekit",
+    "bold-minds",
+    "ik",
+    "spec",
+    "types",
+    "typescript"
+  ],
+  "license": "Apache-2.0",
+  "main": "./index.d.ts",
+  "name": "@includekit/types",
+  "repository": {
+    "directory": "packages/ts",
+    "type": "git",
+    "url": "https://github.com/bold-minds/ik-spec.git"
+  },
+  "scripts": {
+    "build": "echo 'Types-only package - no build needed'"
+  },
+  "type": "module",
+  "types": "./index.d.ts",
+  "version": "0.1.0"
+}

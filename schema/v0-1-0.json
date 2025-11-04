@@ -1,0 +1,681 @@
+{
+  "$defs": {
+    "CursorSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "before": {
+          "type": "boolean"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/Scalar"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "fields",
+        "values"
+      ],
+      "type": "object"
+    },
+    "Dependencies": {
+      "additionalProperties": false,
+      "properties": {
+        "filterBounds": {
+          "items": {
+            "$ref": "#/$defs/FilterSpec"
+          },
+          "type": "array"
+        },
+        "groups": {
+          "additionalProperties": false,
+          "properties": {
+            "keys": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "values": {
+              "items": {
+                "additionalProperties": {
+                  "$ref": "#/$defs/Scalar"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "keys",
+            "values"
+          ],
+          "type": "object"
+        },
+        "records": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "relationBounds": {
+          "items": {
+            "$ref": "#/$defs/RelationFilterBound"
+          },
+          "type": "array"
+        },
+        "shapeId": {
+          "pattern": "^s_[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "topN": {
+          "$ref": "#/$defs/SortThreshold"
+        }
+      },
+      "required": [
+        "shapeId",
+        "records",
+        "filterBounds",
+        "relationBounds"
+      ],
+      "type": "object"
+    },
+    "FilterAtom": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "op": {
+          "oneOf": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "in",
+                "notIn",
+                "isNull",
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "between",
+                "contains",
+                "startsWith",
+                "endsWith",
+                "like",
+                "ilike",
+                "regex",
+                "has",
+                "hasSome",
+                "hasEvery",
+                "jsonContains",
+                "lenEq",
+                "lenGt",
+                "lenLt",
+                "exists"
+              ]
+            },
+            {
+              "pattern": "^custom:.+$",
+              "type": "string"
+            }
+          ]
+        },
+        "path": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Scalar"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/Scalar"
+              },
+              "type": "array"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "max": {
+                  "$ref": "#/$defs/Scalar"
+                },
+                "min": {
+                  "$ref": "#/$defs/Scalar"
+                }
+              },
+              "required": [
+                "min",
+                "max"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "flags": {
+                  "type": "string"
+                },
+                "pattern": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "pattern"
+              ],
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "required": [
+        "field",
+        "op"
+      ],
+      "type": "object"
+    },
+    "FilterSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "and": {
+          "items": {
+            "$ref": "#/$defs/FilterSpec"
+          },
+          "type": "array"
+        },
+        "atoms": {
+          "items": {
+            "$ref": "#/$defs/FilterAtom"
+          },
+          "type": "array"
+        },
+        "not": {
+          "$ref": "#/$defs/FilterSpec"
+        },
+        "or": {
+          "items": {
+            "$ref": "#/$defs/FilterSpec"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "IncludeSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "distinct": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "include": {
+          "additionalProperties": {
+            "$ref": "#/$defs/IncludeSpec"
+          },
+          "type": "object"
+        },
+        "orderBy": {
+          "items": {
+            "$ref": "#/$defs/OrderBySpec"
+          },
+          "type": "array"
+        },
+        "relationFilter": {
+          "items": {
+            "$ref": "#/$defs/RelationFilterBound"
+          },
+          "type": "array"
+        },
+        "select": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "separateLoad": {
+          "type": "boolean"
+        },
+        "skip": {
+          "type": "integer"
+        },
+        "take": {
+          "type": "integer"
+        },
+        "where": {
+          "$ref": "#/$defs/FilterSpec"
+        }
+      },
+      "type": "object"
+    },
+    "LinkChange": {
+      "discriminator": {
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "childId": {
+              "type": "string"
+            },
+            "childModel": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "link"
+            },
+            "parentId": {
+              "type": "string"
+            },
+            "parentModel": {
+              "type": "string"
+            },
+            "relation": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "parentModel",
+            "parentId",
+            "relation",
+            "childModel",
+            "childId"
+          ]
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "childId": {
+              "type": "string"
+            },
+            "childModel": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "unlink"
+            },
+            "parentId": {
+              "type": "string"
+            },
+            "parentModel": {
+              "type": "string"
+            },
+            "relation": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "parentModel",
+            "parentId",
+            "relation",
+            "childModel",
+            "childId"
+          ]
+        }
+      ],
+      "type": "object"
+    },
+    "MutationEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/WriteChange"
+          },
+          "type": "array"
+        },
+        "txId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "changes"
+      ],
+      "type": "object"
+    },
+    "OrderBySpec": {
+      "additionalProperties": false,
+      "properties": {
+        "collation": {
+          "enum": [
+            "ci",
+            "cs"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "asc",
+            "desc"
+          ]
+        },
+        "field": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "nulls": {
+          "enum": [
+            "first",
+            "last"
+          ]
+        }
+      },
+      "required": [
+        "field",
+        "direction"
+      ],
+      "type": "object"
+    },
+    "QueryShape": {
+      "additionalProperties": false,
+      "properties": {
+        "adapterVersion": {
+          "type": "string"
+        },
+        "cursor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CursorSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "distinct": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "groupBy": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "having": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FilterSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "include": {
+          "additionalProperties": {
+            "$ref": "#/$defs/IncludeSpec"
+          },
+          "type": "object"
+        },
+        "model": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "orderBy": {
+          "items": {
+            "$ref": "#/$defs/OrderBySpec"
+          },
+          "type": "array"
+        },
+        "orm": {
+          "description": "diagnostic only; excluded from canonicalization",
+          "enum": [
+            "prisma",
+            "typeorm",
+            "sequelize",
+            "gorm",
+            "efcore",
+            "hibernate",
+            "django",
+            "sqlalchemy",
+            "drizzle"
+          ]
+        },
+        "select": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "skip": {
+          "type": "integer"
+        },
+        "take": {
+          "type": "integer"
+        },
+        "where": {
+          "$ref": "#/$defs/FilterSpec"
+        }
+      },
+      "required": [
+        "model"
+      ],
+      "type": "object"
+    },
+    "RelationFilterBound": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "some",
+            "every",
+            "none"
+          ]
+        },
+        "relation": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "where": {
+          "$ref": "#/$defs/FilterSpec"
+        }
+      },
+      "required": [
+        "relation",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "Scalar": {
+      "description": "Scalar supported in filters/values",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "json": {}
+          },
+          "required": [
+            "json"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "SortThreshold": {
+      "additionalProperties": false,
+      "properties": {
+        "boundary": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Scalar"
+          },
+          "type": "object"
+        },
+        "orderBy": {
+          "items": {
+            "$ref": "#/$defs/OrderBySpec"
+          },
+          "type": "array"
+        },
+        "tieBreaker": {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/Scalar"
+            }
+          },
+          "required": [
+            "field",
+            "value"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "orderBy",
+        "boundary"
+      ],
+      "type": "object"
+    },
+    "WriteChange": {
+      "discriminator": {
+        "propertyName": "op"
+      },
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "after": {
+              "additionalProperties": {
+                "$ref": "#/$defs/Scalar"
+              },
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "op": {
+              "const": "create"
+            }
+          },
+          "required": [
+            "op",
+            "model",
+            "id",
+            "after"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "after": {
+              "additionalProperties": {
+                "$ref": "#/$defs/Scalar"
+              },
+              "type": "object"
+            },
+            "before": {
+              "additionalProperties": {
+                "$ref": "#/$defs/Scalar"
+              },
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "op": {
+              "const": "update"
+            }
+          },
+          "required": [
+            "op",
+            "model",
+            "id",
+            "before",
+            "after"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "before": {
+              "additionalProperties": {
+                "$ref": "#/$defs/Scalar"
+              },
+              "type": "object"
+            },
+            "id": {
+              "type": "string"
+            },
+            "model": {
+              "type": "string"
+            },
+            "op": {
+              "const": "delete"
+            }
+          },
+          "required": [
+            "op",
+            "model",
+            "id",
+            "before"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/LinkChange"
+        }
+      ]
+    }
+  },
+  "$id": "https://github.com/bold-minds/ik-spec/schema/v0-1-0.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "Dependencies": {
+      "$ref": "#/$defs/Dependencies"
+    },
+    "MutationEvent": {
+      "$ref": "#/$defs/MutationEvent"
+    },
+    "QueryShape": {
+      "$ref": "#/$defs/QueryShape"
+    }
+  },
+  "title": "IncludeKit Universal Format v0.1",
+  "type": "object"
+}

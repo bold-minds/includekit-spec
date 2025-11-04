@@ -1,0 +1,42 @@
+name: Verify Version Sync
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  # pull_request:
+  #   branches: [main]
+
+jobs:
+  verify-version-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      
+      - name: Verify VERSION file format
+        run: |
+          VERSION=$(cat VERSION)
+          if ! echo "$VERSION" | grep -E '^\d+\.\d+\.\d+$'; then
+            echo "❌ VERSION file must contain valid semver (X.Y.Z)"
+            exit 1
+          fi
+          echo "✓ VERSION format is valid: $VERSION"
+      
+      - name: Run version sync
+        run: go run tools/version/sync.go
+      
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --exit-code; then
+            echo "❌ Version is out of sync! Files need to be updated."
+            echo ""
+            echo "Run: go run tools/version/sync.go"
+            echo ""
+            git diff
+            exit 1
+          fi
+          echo "✓ All version references are in sync"

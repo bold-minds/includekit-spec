@@ -1,0 +1,129 @@
+name: CI
+
+# Temporarily disabled - will be re-enabled before release
+on:
+  workflow_dispatch:  # Manual trigger only
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install go-jsonschema
+        run: go install github.com/atombender/go-jsonschema@latest
+      
+      - name: Install TypeScript dependencies
+        run: |
+          cd pkgs/ts/tests
+          npm ci
+      
+      - name: Build codegen
+        run: |
+          cd codegen
+          go build -o ../bin/codegen .
+      
+      - name: Run full test suite
+        run: ./scripts/test.sh
+
+  verify-schema:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Verify schema is valid JSON
+        run: |
+          jq empty schema/v0-1-0.json
+
+  forbidden-imports:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for forbidden testkit imports
+        run: |
+          echo "Checking for forbidden testkit imports in production code..."
+          
+          # TypeScript: testkit should only be imported in test files
+          if grep -r --include="*.ts" --exclude="*.test.ts" --exclude="*.spec.ts" \
+            "@includekit/types-testkit" pkgs/ts/types/ 2>/dev/null; then
+            echo "❌ ERROR: Found testkit import in production TS code"
+            exit 1
+          fi
+          
+          # Go: tests package should only be imported in test files
+          if grep -r --include="*.go" --exclude="*_test.go" \
+            "github.com/bold-minds/ik-spec/go/tests" pkgs/go/types/ 2>/dev/null; then
+            echo "❌ ERROR: Found testkit import in production Go code"
+            exit 1
+          fi
+          
+          echo "✓ No forbidden imports found"
+
+  verify-test-vectors:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      
+      - name: Regenerate test vectors
+        run: go run tools/tests/generate-vectors.go
+      
+      - name: Check if vectors are up-to-date
+        run: |
+          if ! git diff --exit-code tools/tests/vectors/query-shapes.json; then
+            echo "❌ Test vectors are out of sync!"
+            echo "Run: go run tools/tests/generate-vectors.go"
+            exit 1
+          fi
+          echo "✓ Test vectors are up-to-date"
+
+  verify-go-modules:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      
+      - name: Verify and tidy all go.mod files
+        run: |
+          for mod in codegen/go.mod pkgs/go/go.mod; do
+            dir=$(dirname $mod)
+            echo "Checking $mod..."
+            cd $dir
+            go mod verify
+            go mod tidy
+            if ! git diff --exit-code go.mod go.sum 2>/dev/null; then
+              echo "❌ $mod is not tidy! Run: cd $dir && go mod tidy"
+              exit 1
+            fi
+            cd - > /dev/null
+          done
+          echo "✓ All go.mod files are tidy and verified"
