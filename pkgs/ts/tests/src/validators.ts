@@ -1,5 +1,6 @@
 /**
  * Runtime validators for IncludeKit Universal Format
+ * Auto-generated from schema/v0-1-0.json
  * Manually maintained - must be updated when schema changes
  */
 

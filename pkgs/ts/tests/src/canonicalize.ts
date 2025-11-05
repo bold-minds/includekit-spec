@@ -24,7 +24,7 @@ function canonicalReplacer(_key: string, value: any): any {
 export function canonicalizeQueryShape(shape: any): string {
   // Remove diagnostic fields before canonicalization
   const cleaned = JSON.parse(JSON.stringify(shape));
-  delete cleaned.orm;
-  delete cleaned.adapterVersion;
+  delete cleaned.orm_version;
+  delete cleaned.sdk_version;
   return canonicalize(cleaned);
 }
