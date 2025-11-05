@@ -107,7 +107,7 @@ func syncSchema(version, versionDashed, versionMajorMinor string) error {
 	}
 
 	// Update schema metadata
-	schema["$id"] = fmt.Sprintf("https://github.com/bold-minds/ik-spec/schema/v%s.json", versionDashed)
+	schema["$id"] = fmt.Sprintf("https://github.com/bold-minds/includekit-spec/schema/v%s.json", versionDashed)
 	schema["title"] = fmt.Sprintf("IncludeKit Universal Format v%s", versionMajorMinor)
 
 	// Write updated schema

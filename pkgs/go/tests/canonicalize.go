@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/bold-minds/ik-spec/go/types"
+	"github.com/bold-minds/includekit-spec/go/types"
 )
 
 // Canonicalize returns the JCS (RFC 8785) canonical JSON string representation
@@ -29,7 +29,7 @@ func Canonicalize(obj interface{}) (string, error) {
 }
 
 // CanonicalizeQueryShape removes diagnostic fields and canonicalizes
-func CanonicalizeQueryShape(shape *types.QueryShape) (string, error) {
+func CanonicalizeQueryShape(shape *types.Statement) (string, error) {
 	// Make a copy and remove diagnostic fields
 	data, err := json.Marshal(shape)
 	if err != nil {

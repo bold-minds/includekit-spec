@@ -2,149 +2,116 @@
 // This is a PRODUCTION package - types only, no runtime utilities.
 //
 // IMPORTANT: These types are HAND-WRITTEN (not auto-generated) to preserve idiomatic
-// Go patterns like the sealed Scalar interface and pointer-to-slice for optionals.
+// Go patterns like pointer-to-slice for optionals.
 // When schema/v0-1-0.json changes, these types must be updated manually.
-//
-// TypeScript types ARE auto-generated. See GO_GENERATION_ANALYSIS.md for details.
 package types
 
-// Scalar represents a supported value type in filters/values
-type Scalar interface {
-	isScalar()
+// Statement is the normalized, language-agnostic description of a read
+type Statement struct {
+	Query      *Query      `json:"query,omitempty"`
+	Pagination *Pagination `json:"pagination,omitempty"`
+	GroupBy    *[]string   `json:"group_by,omitempty"`
+	Having     *Filter     `json:"having,omitempty"`
+	Includes   []Include   `json:"includes,omitempty"`
+	ORMVersion *string     `json:"orm_version,omitempty"` // diagnostic only
+	SDKVersion *string     `json:"sdk_version,omitempty"`
 }
 
-type ScalarString string
-type ScalarNumber float64
-type ScalarBool bool
-type ScalarNull struct{}
-type ScalarJSON struct {
-	JSON interface{} `json:"json"`
+type Query struct {
+	Model    string     `json:"model"` // target relation name (e.g., "posts", "author")
+	Fields   *[]string  `json:"fields,omitempty"`
+	Where    *Filter    `json:"where,omitempty"`
+	OrderBy  *[]OrderBy `json:"order_by,omitempty"`
+	Limit    *int       `json:"limit,omitempty"`
+	Offset   *int       `json:"offset,omitempty"`
+	Distinct *[]string  `json:"distinct,omitempty"`
 }
 
-func (ScalarString) isScalar() {}
-func (ScalarNumber) isScalar() {}
-func (ScalarBool) isScalar()   {}
-func (ScalarNull) isScalar()   {}
-func (ScalarJSON) isScalar()   {}
-
-// OrderBySpec defines field ordering
-type OrderBySpec struct {
-	Field     string  `json:"field"`
-	Direction string  `json:"direction"`           // "asc" | "desc"
-	Nulls     *string `json:"nulls,omitempty"`     // "first" | "last"
-	Collation *string `json:"collation,omitempty"` // "ci" | "cs"
+// Include defines nested relation loading and optional relation-based filtering.
+// When Kind is nil, this loads the relation data.
+// When Kind is set, this filters the parent records based on the relation.
+// When Fields is nil/empty and Kind is set, this filters without loading data.
+type Include struct {
+	Query    *Query    `json:"query,omitempty"`
+	Kind     *string   `json:"kind,omitempty"`     // "some" | "every" | "none" - filters parent by relation
+	Includes []Include `json:"includes,omitempty"` // nested includes
 }
 
-// CursorSpec defines cursor-based pagination
-type CursorSpec struct {
-	Fields []string `json:"fields"`
-	Values []Scalar `json:"values"`
-	Before *bool    `json:"before,omitempty"`
+// Filter composes predicates with boolean logic
+type Filter struct {
+	And        *[]Filter    `json:"and,omitempty"`
+	Or         *[]Filter    `json:"or,omitempty"`
+	Not        *Filter      `json:"not,omitempty"`
+	Conditions *[]Condition `json:"conditions,omitempty"`
 }
 
-// FilterAtom is a leaf-level predicate
-type FilterAtom struct {
-	Field string      `json:"field"`
-	Op    string      `json:"op"`
-	Value interface{} `json:"value,omitempty"`
-	Path  []string    `json:"path,omitempty"`
+// Condition is a leaf-level predicate
+type Condition struct {
+	Field     string   `json:"field"`
+	FieldPath []string `json:"field_path,omitempty"`
+	Op        string   `json:"op"`
+	Value     any      `json:"value,omitempty"`
 }
 
-// FilterSpec composes predicates with boolean logic
-type FilterSpec struct {
-	And   *[]FilterSpec `json:"and,omitempty"`
-	Or    *[]FilterSpec `json:"or,omitempty"`
-	Not   *FilterSpec   `json:"not,omitempty"`
-	Atoms *[]FilterAtom `json:"atoms,omitempty"`
+// OrderBy defines field ordering
+type OrderBy struct {
+	Field         string `json:"field"`
+	Descending    *bool  `json:"descending,omitempty"`     // true = DESCENDING, false = ASCENDING
+	NullsFirst    *bool  `json:"nulls_first,omitempty"`    // true = NULLS FIRST, false = NULLS LAST
+	CaseSensitive *bool  `json:"case_sensitive,omitempty"` // true = case-sensitive, false = case-insensitive
 }
 
-// RelationFilterBound captures relational predicates
-type RelationFilterBound struct {
-	Relation string      `json:"relation"`
-	Kind     string      `json:"kind"` // "some" | "every" | "none"
-	Where    *FilterSpec `json:"where,omitempty"`
+// Pagination defines cursor-based pagination parameters.
+// Uses opaque cursors (base64-encoded JSON) for SDK abstraction.
+// Forward pagination: use First + After
+// Backward pagination: use Last + Before
+type Pagination struct {
+	First  *int    `json:"first,omitempty"`  // Forward limit
+	Last   *int    `json:"last,omitempty"`   // Backward limit
+	After  *string `json:"after,omitempty"`  // Opaque cursor to start after (forward)
+	Before *string `json:"before,omitempty"` // Opaque cursor to start before (backward)
 }
 
-// IncludeSpec defines nested relation loading
-type IncludeSpec struct {
-	Select         *[]string              `json:"select,omitempty"`
-	Where          *FilterSpec            `json:"where,omitempty"`
-	OrderBy        *[]OrderBySpec         `json:"orderBy,omitempty"`
-	Take           *int                   `json:"take,omitempty"`
-	Skip           *int                   `json:"skip,omitempty"`
-	Distinct       *[]string              `json:"distinct,omitempty"`
-	Include        map[string]IncludeSpec `json:"include,omitempty"`
-	RelationFilter *[]RelationFilterBound `json:"relationFilter,omitempty"`
-	SeparateLoad   *bool                  `json:"separateLoad,omitempty"`
+// Mutation describes writes that could affect reads
+type Mutation struct {
+	TxID    *string  `json:"tx_id,omitempty"`
+	Changes []Change `json:"changes"`
 }
 
-// QueryShape is the normalized, language-agnostic description of a read
-type QueryShape struct {
-	Model          string                 `json:"model"`
-	Select         *[]string              `json:"select,omitempty"`
-	Where          *FilterSpec            `json:"where,omitempty"`
-	OrderBy        *[]OrderBySpec         `json:"orderBy,omitempty"`
-	Take           *int                   `json:"take,omitempty"`
-	Skip           *int                   `json:"skip,omitempty"`
-	Cursor         *CursorSpec            `json:"cursor,omitempty"`
-	Distinct       *[]string              `json:"distinct,omitempty"`
-	GroupBy        *[]string              `json:"groupBy,omitempty"`
-	Having         *FilterSpec            `json:"having,omitempty"`
-	Include        map[string]IncludeSpec `json:"include,omitempty"`
-	ORM            *string                `json:"orm,omitempty"` // diagnostic only
-	AdapterVersion *string                `json:"adapterVersion,omitempty"`
-}
-
-// LinkChange represents link/unlink operations
-type LinkChange struct {
-	Kind        string `json:"kind"` // "link" | "unlink"
-	ParentModel string `json:"parentModel"`
-	ParentID    string `json:"parentId"`
-	Relation    string `json:"relation"`
-	ChildModel  string `json:"childModel"`
-	ChildID     string `json:"childId"`
-}
-
-// WriteChange represents create/update/delete operations
-type WriteChange struct {
-	Op     string                 `json:"op"` // "create" | "update" | "delete" | "link" | "unlink"
-	Model  string                 `json:"model,omitempty"`
-	ID     string                 `json:"id,omitempty"`
-	Before map[string]interface{} `json:"before,omitempty"`
-	After  map[string]interface{} `json:"after,omitempty"`
-	// For link/unlink operations
-	ParentModel *string `json:"parentModel,omitempty"`
-	ParentID    *string `json:"parentId,omitempty"`
-	Relation    *string `json:"relation,omitempty"`
-	ChildModel  *string `json:"childModel,omitempty"`
-	ChildID     *string `json:"childId,omitempty"`
-}
-
-// MutationEvent describes writes that could affect reads
-type MutationEvent struct {
-	TxID    *string       `json:"txId,omitempty"`
-	Changes []WriteChange `json:"changes"`
-}
-
-// SortThreshold defines boundaries for topN tracking
-type SortThreshold struct {
-	OrderBy    []OrderBySpec          `json:"orderBy"`
-	Boundary   map[string]interface{} `json:"boundary"`
-	TieBreaker *struct {
-		Field string      `json:"field"`
-		Value interface{} `json:"value"`
-	} `json:"tieBreaker,omitempty"`
+// Change represents a single mutation operation (insert/update/delete)
+type Change struct {
+	Model  string  `json:"model"`
+	Action string  `json:"action"` // "insert" | "update" | "delete"
+	Sets   []KV    `json:"sets,omitempty"`
+	Where  *Filter `json:"where,omitempty"`
 }
 
 // Dependencies tracks what a read depends on (engine output)
 type Dependencies struct {
-	ShapeID        string                `json:"shapeId"`
-	Records        map[string][]string   `json:"records"`
-	FilterBounds   []FilterSpec          `json:"filterBounds"`
-	RelationBounds []RelationFilterBound `json:"relationBounds"`
-	TopN           *SortThreshold        `json:"topN,omitempty"`
-	Groups         *struct {
-		Keys   []string                 `json:"keys"`
-		Values []map[string]interface{} `json:"values"`
-	} `json:"groups,omitempty"`
+	ShapeID  string              `json:"shape_id"`
+	Records  map[string][]string `json:"records"`
+	Filters  []Filter            `json:"filters"`
+	Includes []Include           `json:"includes"` // includes with Kind set
+	LastRow  *PaginationBoundary `json:"last_row,omitempty"`
+	GroupBy  *GroupByKV          `json:"group_by,omitempty"`
+}
+
+// PaginationBoundary tracks the last included row for paginated queries
+type PaginationBoundary struct {
+	OrderBy []OrderBy `json:"order_by"`
+	// Field values of the last included row
+	Row map[string]any `json:"row"`
+	// Cursor identifies the stable pagination cursor
+	Cursor *KV `json:"cursor,omitempty"`
+}
+
+// GroupByKV tracks group-by dimensions
+type GroupByKV struct {
+	Keys   []string         `json:"keys"`
+	Values []map[string]any `json:"values"`
+}
+
+type KV struct {
+	Field string `json:"field"`
+	Value any    `json:"value"`
 }

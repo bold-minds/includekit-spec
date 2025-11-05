@@ -1,4 +1,4 @@
-// Package main generates comprehensive test vectors for cross-language testing
+// Package main generates test vectors for the new schema format
 package main
 
 import (
@@ -20,65 +20,150 @@ type TestVector struct {
 
 func main() {
 	vectors := []TestVector{
-		// Existing vectors - will be updated with computed values
 		{
-			Name: "simple-query",
+			Name: "minimal-query",
 			Shape: map[string]interface{}{
-				"model": "Post",
-				"where": map[string]interface{}{
-					"atoms": []map[string]interface{}{
-						{"field": "published", "op": "eq", "value": true},
-					},
+				"query": map[string]interface{}{
+					"model": "Post",
 				},
-				"orderBy": []map[string]interface{}{
-					{"field": "createdAt", "direction": "desc"},
-				},
-				"take": 10,
 			},
 		},
 		{
-			Name: "with-relations",
+			Name: "simple-query-with-filter",
 			Shape: map[string]interface{}{
-				"model": "User",
-				"select": []string{"id", "name", "email"},
-				"include": map[string]interface{}{
-					"posts": map[string]interface{}{
-						"where": map[string]interface{}{
-							"atoms": []map[string]interface{}{
-								{"field": "published", "op": "eq", "value": true},
-							},
-						},
-						"orderBy": []map[string]interface{}{
-							{"field": "createdAt", "direction": "desc"},
+				"query": map[string]interface{}{
+					"model": "Post",
+					"where": map[string]interface{}{
+						"conditions": []map[string]interface{}{
+							{"field": "published", "op": "eq", "value": true},
 						},
 					},
 				},
 			},
 		},
-		// New comprehensive vectors
 		{
-			Name: "complex-and-or-filter",
+			Name: "with-order-and-limit",
 			Shape: map[string]interface{}{
-				"model": "Post",
-				"where": map[string]interface{}{
-					"and": []map[string]interface{}{
-						{
-							"atoms": []map[string]interface{}{
-								{"field": "status", "op": "eq", "value": "published"},
+				"query": map[string]interface{}{
+					"model": "Post",
+					"order_by": []map[string]interface{}{
+						{"field": "createdAt", "descending": true},
+					},
+					"limit": 10,
+				},
+			},
+		},
+		{
+			Name: "with-fields-and-distinct",
+			Shape: map[string]interface{}{
+				"query": map[string]interface{}{
+					"model":    "Post",
+					"fields":   []string{"id", "title"},
+					"distinct": []string{"authorId"},
+				},
+			},
+		},
+		{
+			Name: "with-includes",
+			Shape: map[string]interface{}{
+				"query": map[string]interface{}{
+					"model": "User",
+				},
+				"includes": []map[string]interface{}{
+					{
+						"query": map[string]interface{}{
+							"model":  "posts",
+							"fields": []string{"id", "title"},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "with-nested-includes",
+			Shape: map[string]interface{}{
+				"query": map[string]interface{}{
+					"model": "User",
+				},
+				"includes": []map[string]interface{}{
+					{
+						"query": map[string]interface{}{
+							"model": "posts",
+						},
+						"includes": []map[string]interface{}{
+							{
+								"query": map[string]interface{}{
+									"model": "comments",
+									"limit": 5,
+								},
 							},
 						},
-						{
-							"or": []map[string]interface{}{
-								{
-									"atoms": []map[string]interface{}{
-										{"field": "views", "op": "gt", "value": 1000},
+					},
+				},
+			},
+		},
+		{
+			Name: "with-relation-filter",
+			Shape: map[string]interface{}{
+				"query": map[string]interface{}{
+					"model": "User",
+				},
+				"includes": []map[string]interface{}{
+					{
+						"kind": "some",
+						"query": map[string]interface{}{
+							"model": "posts",
+							"where": map[string]interface{}{
+								"conditions": []map[string]interface{}{
+									{"field": "published", "op": "eq", "value": true},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "with-pagination",
+			Shape: map[string]interface{}{
+				"query": map[string]interface{}{
+					"model": "Post",
+					"order_by": []map[string]interface{}{
+						{"field": "createdAt", "descending": true},
+						{"field": "id"},
+					},
+				},
+				"pagination": map[string]interface{}{
+					"first": 20,
+					"after": "eyJpZCI6InBvc3RfMTIzIn0=",
+				},
+			},
+		},
+		{
+			Name: "complex-filter",
+			Shape: map[string]interface{}{
+				"query": map[string]interface{}{
+					"model": "Post",
+					"where": map[string]interface{}{
+						"and": []map[string]interface{}{
+							{
+								"conditions": []map[string]interface{}{
+									{"field": "published", "op": "eq", "value": true},
+								},
+							},
+							{
+								"or": []map[string]interface{}{
+									{
+										"conditions": []map[string]interface{}{
+											{"field": "featured", "op": "eq", "value": true},
+										},
+									},
+									{
+										"conditions": []map[string]interface{}{
+											{"field": "views", "op": "gte", "value": 100},
+										},
 									},
 								},
-								{
-									"atoms": []map[string]interface{}{
-										{"field": "featured", "op": "eq", "value": true},
-									},
-								},
 							},
 						},
 					},
@@ -86,182 +171,23 @@ func main() {
 			},
 		},
 		{
-			Name: "not-filter",
+			Name: "with-group-by-having",
 			Shape: map[string]interface{}{
-				"model": "Comment",
-				"where": map[string]interface{}{
-					"not": map[string]interface{}{
-						"atoms": []map[string]interface{}{
-							{"field": "deleted", "op": "eq", "value": true},
-						},
-					},
+				"query": map[string]interface{}{
+					"model":  "Post",
+					"fields": []string{"authorId", "COUNT(*) as count"},
 				},
-			},
-		},
-		// Note: Cursor pagination test temporarily disabled due to Go Scalar interface
-		// JSON unmarshaling limitation. The TypeScript side works fine.
-		// TODO: Consider changing Go types to use []interface{} for cursor.values
-		/*
-		{
-			Name: "with-cursor-pagination",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"orderBy": []map[string]interface{}{
-					{"field": "createdAt", "direction": "desc"},
-					{"field": "id", "direction": "asc"},
-				},
-				"cursor": map[string]interface{}{
-					"fields": []interface{}{"createdAt", "id"},
-					"values": []interface{}{"2024-01-01T00:00:00Z", "post_123"},
-					"before": false,
-				},
-				"take": 20,
-			},
-		},
-		*/
-		{
-			Name: "with-distinct",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"select":   []string{"authorId", "category"},
-				"distinct": []string{"authorId"},
-			},
-		},
-		{
-			Name: "with-groupby-having",
-			Shape: map[string]interface{}{
-				"model":   "Post",
-				"select":  []string{"authorId"},
-				"groupBy": []string{"authorId"},
+				"group_by": []string{"authorId"},
 				"having": map[string]interface{}{
-					"atoms": []map[string]interface{}{
+					"conditions": []map[string]interface{}{
 						{"field": "count", "op": "gt", "value": 5},
 					},
 				},
 			},
 		},
-		{
-			Name: "nested-includes",
-			Shape: map[string]interface{}{
-				"model": "User",
-				"include": map[string]interface{}{
-					"posts": map[string]interface{}{
-						"include": map[string]interface{}{
-							"comments": map[string]interface{}{
-								"where": map[string]interface{}{
-									"atoms": []map[string]interface{}{
-										{"field": "approved", "op": "eq", "value": true},
-									},
-								},
-								"take": 5,
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Name: "with-skip-take",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"skip":  10,
-				"take":  20,
-				"orderBy": []map[string]interface{}{
-					{"field": "createdAt", "direction": "desc"},
-				},
-			},
-		},
-		{
-			Name: "multiple-orderby",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"orderBy": []map[string]interface{}{
-					{"field": "featured", "direction": "desc"},
-					{"field": "views", "direction": "desc"},
-					{"field": "createdAt", "direction": "asc", "nulls": "last"},
-				},
-			},
-		},
-		{
-			Name: "in-operator",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"where": map[string]interface{}{
-					"atoms": []map[string]interface{}{
-						{"field": "status", "op": "in", "value": []string{"published", "featured"}},
-					},
-				},
-			},
-		},
-		{
-			Name: "contains-operator",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"where": map[string]interface{}{
-					"atoms": []map[string]interface{}{
-						{"field": "title", "op": "contains", "value": "golang"},
-						{"field": "tags", "op": "has", "value": "tutorial"},
-					},
-				},
-			},
-		},
-		{
-			Name: "comparison-operators",
-			Shape: map[string]interface{}{
-				"model": "Post",
-				"where": map[string]interface{}{
-					"and": []map[string]interface{}{
-						{
-							"atoms": []map[string]interface{}{
-								{"field": "views", "op": "gte", "value": 100},
-							},
-						},
-						{
-							"atoms": []map[string]interface{}{
-								{"field": "views", "op": "lte", "value": 10000},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Name: "relation-filter-some",
-			Shape: map[string]interface{}{
-				"model": "User",
-				"include": map[string]interface{}{
-					"posts": map[string]interface{}{
-						"relationFilter": []map[string]interface{}{
-							{
-								"relation": "comments",
-								"kind":     "some",
-								"where": map[string]interface{}{
-									"atoms": []map[string]interface{}{
-										{"field": "rating", "op": "gte", "value": 4},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			Name: "empty-select",
-			Shape: map[string]interface{}{
-				"model":  "Post",
-				"select": []string{},
-			},
-		},
-		{
-			Name: "minimal-query",
-			Shape: map[string]interface{}{
-				"model": "Post",
-			},
-		},
 	}
 
-	// Compute canonical JSON and shapeId for each vector
+	// Compute canonical JSON and shape IDs
 	for i := range vectors {
 		canonical, err := canonicalize(vectors[i].Shape)
 		if err != nil {
@@ -296,16 +222,16 @@ func canonicalize(v interface{}) (string, error) {
 		return "", err
 	}
 
-	// Parse back to get clean structure
+	// Unmarshal to generic interface
 	var obj interface{}
 	if err := json.Unmarshal(data, &obj); err != nil {
 		return "", err
 	}
 
-	// Canonicalize (sort keys recursively)
+	// Canonicalize
 	canonical := canonicalizeValue(obj)
 
-	// Marshal with no escaping
+	// Marshal back to canonical JSON
 	result, err := json.Marshal(canonical)
 	if err != nil {
 		return "", err
@@ -314,8 +240,8 @@ func canonicalize(v interface{}) (string, error) {
 	return string(result), nil
 }
 
-func canonicalizeValue(v interface{}) interface{} {
-	switch val := v.(type) {
+func canonicalizeValue(val interface{}) interface{} {
+	switch val := val.(type) {
 	case map[string]interface{}:
 		// Sort keys
 		keys := make([]string, 0, len(val))

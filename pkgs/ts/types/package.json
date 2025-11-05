@@ -12,18 +12,17 @@
   "keywords": [
     "includekit",
     "bold-minds",
-    "ik",
     "spec",
     "types",
     "typescript"
   ],
   "license": "Apache-2.0",
   "main": "./index.d.ts",
-  "name": "@includekit/types",
+  "name": "@includekit/spec",
   "repository": {
     "directory": "packages/ts",
     "type": "git",
-    "url": "https://github.com/bold-minds/ik-spec.git"
+    "url": "https://github.com/bold-minds/includekit-spec.git"
   },
   "scripts": {
     "build": "echo 'Types-only package - no build needed'"

@@ -15,20 +15,29 @@
 //
 // # Core Types
 //
-// QueryShape represents a normalized read operation:
+// Statement represents a normalized read operation:
 //
-//	shape := &types.QueryShape{
-//	    Model: "Post",
-//	    Where: &types.FilterSpec{...},
-//	    OrderBy: &[]types.OrderBySpec{...},
-//	    Take: intPtr(10),
+//	stmt := &types.Statement{
+//	    Query: &types.Query{
+//	        Model: "posts",
+//	        Where: &types.Filter{...},
+//	        OrderBy: &[]types.OrderBy{...},
+//	        Limit: intPtr(10),
+//	    },
+//	    Pagination: &types.Pagination{
+//	        First: intPtr(20),
+//	        After: strPtr("eyJpZCI6InBvc3RfMTIzIn0="), // opaque cursor (base64 JSON)
+//	    },
+//	    Includes: []types.Include{...},
 //	}
 //
-// MutationEvent describes write operations that may invalidate cached reads:
+// Mutation describes write operations that may invalidate cached reads:
 //
-//	event := &types.MutationEvent{
-//	    Changes: []types.WriteChange{
-//	        {Op: "create", Model: "Post", ID: "1", After: {...}},
+//	event := &types.Mutation{
+//	    Changes: []types.Change{
+//	        {Model: "posts", Action: "insert", Sets: []types.KV{...}},
+//	        {Model: "posts", Action: "update", Sets: []types.KV{...}, Where: &types.Filter{...}},
+//	        {Model: "posts", Action: "delete", Where: &types.Filter{...}},
 //	    },
 //	}
 //
@@ -37,7 +46,8 @@
 //	deps := &types.Dependencies{
 //	    ShapeID: "s_abc...",
 //	    Records: map[string][]string{"Post": {"1", "2"}},
-//	    FilterBounds: []types.FilterSpec{...},
+//	    Filters: []types.Filter{...},
+//	    Includes: []types.Include{...},
 //	}
 //
 // # Implementation Boundary
@@ -45,16 +55,16 @@
 // Production code should ONLY import this package for type definitions.
 // Runtime utilities (validators, JCS, hashing) belong in separate testkit packages:
 //
-//   - TypeScript: @includekit/types-testkit
-//   - Go: github.com/bold-minds/ik-spec/go/tests
+//   - TypeScript: @includekit/spec-testkit
+//   - Go: github.com/bold-minds/includekit-spec/go/tests
 //
 // This separation ensures production bundles remain lightweight and type-focused.
 //
 // # Schema Definition
 //
 // Types are generated from the JSON Schema at:
-// https://github.com/bold-minds/ik-spec/schema/v0-1-0.json
+// https://github.com/bold-minds/includekit-spec/schema/v0-1-0.json
 //
 // For the full specification, see:
-// https://github.com/bold-minds/ik-spec/schema/README.md
+// https://github.com/bold-minds/includekit-spec/schema/README.md
 package types

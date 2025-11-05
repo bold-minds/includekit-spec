@@ -12,10 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial pre-release of IncludeKit Universal Format
 - JSON Schema for QueryShape, MutationEvent, Dependencies
-- TypeScript types package (`@includekit/types`)
-- TypeScript testkit package (`@includekit/types-testkit`)
-- Go types package (`github.com/bold-minds/ik-spec/go`)
-- Go testkit package (`github.com/bold-minds/ik-spec/go/tests`)
+- TypeScript spec package (`@includekit/spec`)
+- TypeScript testkit package (`@includekit/spec-testkit`)
+- Go spec package (`github.com/bold-minds/includekit-spec/go`)
+- Go testkit package (`github.com/bold-minds/includekit-spec/go/tests`)
 - Cross-language conformance test vectors (15 comprehensive tests)
 - Automated version management via `VERSION` file and sync tool
 - Go-based code generator (`codegen/`)

@@ -1,4 +1,4 @@
-module github.com/bold-minds/ik-spec/codegen
+module github.com/bold-minds/includekit-spec/codegen
 
 go 1.22
 

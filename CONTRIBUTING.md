@@ -111,13 +111,13 @@ Version management uses the `VERSION` file as single source of truth:
 - To get started, fork, clone, and test:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ik-spec.git
-cd ik-spec
+git clone https://github.com/YOUR_USERNAME/includekit-spec.git
+cd includekit-spec
 ./scripts/test.sh  # Installs deps, builds, tests everything
 ```
 
 - **Do not import testkit packages from production code.** CI will fail if:
-  - `@includekit/types-testkit` is imported outside test files (TypeScript)
-  - `github.com/bold-minds/ik-spec/go/tests` is imported from `pkgs/go/types` (Go)
+  - `@includekit/spec-testkit` is imported outside test files (TypeScript)
+  - `github.com/bold-minds/includekit-spec/go/tests` is imported from `pkgs/go/types` (Go)
 - All validators, canonicalization, and shapeId utilities live in testkit packages only.
-- Production packages (`@includekit/types`, `ik-spec/go`) contain types only.
+- Production packages (`@includekit/spec`, `includekit-spec/go`) contain types only.

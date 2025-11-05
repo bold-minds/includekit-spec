@@ -1,4 +1,4 @@
-# IncludeKit Types
+# IncludeKit Spec
 
 The **single source of truth** for IncludeKit's Universal Format.  
 This repo defines the canonical, language-agnostic **specification** used by:
@@ -9,10 +9,10 @@ This repo defines the canonical, language-agnostic **specification** used by:
 
 - **Normative spec:** [`schema/README.md`](schema/README.md)
 - **Machine schema:** [`schema/v0-1-0.json`](schema/v0-1-0.json)
-- **TypeScript types:** `@includekit/types` (production, types-only)
-- **TypeScript testkit:** `@includekit/types-testkit` (validators, JCS, shapeId)
-- **Go types:** `github.com/bold-minds/ik-spec/go` (production, types-only)
-- **Go testkit:** `github.com/bold-minds/ik-spec/go/tests` (validators, JCS, shapeId)
+- **TypeScript spec:** `@includekit/spec` (production, types-only)
+- **TypeScript testkit:** `@includekit/spec-testkit` (validators, JCS, shapeId)
+- **Go spec:** `github.com/bold-minds/includekit-spec/go` (production, types-only)
+- **Go testkit:** `github.com/bold-minds/includekit-spec/go/tests` (validators, JCS, shapeId)
 - **Conformance tests:** Cross-language test vectors (TS ↔ Go)
 
 ## Why this exists
@@ -34,15 +34,15 @@ This repo defines the canonical, language-agnostic **specification** used by:
 
 ```bash
 # Clone and run automated setup
-git clone https://github.com/bold-minds/ik-spec.git
-cd ik-spec
+git clone https://github.com/bold-minds/includekit-spec.git
+cd includekit-spec
 ./scripts/test.sh  # Builds codegen, regenerates types, runs all tests
 ```
 
 ### Repository Structure
 
 ```
-ik-spec/
+includekit-spec/
 ├─ VERSION                    # Single source of truth for version
 ├─ schema/
 │  └─ v0-1-0.json            # JSON Schema (source of truth)
@@ -59,12 +59,12 @@ ik-spec/
 ```
 
 **Production packages** (types only, no runtime):
-- `@includekit/types` (TypeScript)
-- `github.com/bold-minds/ik-spec/go` (Go)
+- `@includekit/spec` (TypeScript)
+- `github.com/bold-minds/includekit-spec/go` (Go)
 
 **Testkit packages** (validators, JCS, shapeId - dev/test only):
-- `@includekit/types-testkit` (TypeScript)
-- `github.com/bold-minds/ik-spec/go/tests` (Go)
+- `@includekit/spec-testkit` (TypeScript)
+- `github.com/bold-minds/includekit-spec/go/tests` (Go)
 
 ---
 
@@ -73,11 +73,11 @@ ik-spec/
 ### TypeScript
 
 ```bash
-npm install @includekit/types
+npm install @includekit/spec
 ```
 
 ```typescript
-import type { QueryShape } from '@includekit/types';
+import type { QueryShape } from '@includekit/spec';
 
 const shape: QueryShape = {
   model: 'Post',
@@ -92,11 +92,11 @@ const shape: QueryShape = {
 ### Go
 
 ```bash
-go get github.com/bold-minds/ik-spec/go
+go get github.com/bold-minds/includekit-spec/go
 ```
 
 ```go
-import "github.com/bold-minds/ik-spec/go/types"
+import "github.com/bold-minds/includekit-spec/go/types"
 
 shape := types.QueryShape{
   Model: "Post",

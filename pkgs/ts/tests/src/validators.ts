@@ -1,17 +1,16 @@
 /**
  * Runtime validators for IncludeKit Universal Format
- * Auto-generated from schema/v0-1-0.json
+ * Manually maintained - must be updated when schema changes
  */
 
 import type {
-  QueryShape,
-  MutationEvent,
+  Statement,
+  Mutation,
   Dependencies,
-  FilterSpec,
-  FilterAtom,
-  OrderBySpec,
-  Scalar,
-} from '@includekit/contract';
+  Filter,
+  Condition,
+  OrderBy,
+} from '@includekit/spec';
 
 export class ValidationError extends Error {
   constructor(message: string, public path: string = '') {
@@ -20,23 +19,15 @@ export class ValidationError extends Error {
   }
 }
 
-function isScalar(value: any): value is Scalar {
-  if (value === null) return true;
-  const type = typeof value;
-  if (type === 'string' || type === 'number' || type === 'boolean') return true;
-  if (type === 'object' && value.json !== undefined && Object.keys(value).length === 1) return true;
-  return false;
-}
-
-function validateFilterAtom(atom: any, path: string = 'filterAtom'): asserts atom is FilterAtom {
-  if (typeof atom !== 'object' || atom === null) {
-    throw new ValidationError('FilterAtom must be an object', path);
+function validateCondition(condition: any, path: string = 'condition'): asserts condition is Condition {
+  if (typeof condition !== 'object' || condition === null) {
+    throw new ValidationError('Condition must be an object', path);
   }
-  if (typeof atom.field !== 'string' || atom.field.length === 0) {
-    throw new ValidationError('FilterAtom.field must be a non-empty string', `${path}.field`);
+  if (typeof condition.field !== 'string' || condition.field.length === 0) {
+    throw new ValidationError('Condition.field must be a non-empty string', `${path}.field`);
   }
-  if (typeof atom.op !== 'string') {
-    throw new ValidationError('FilterAtom.op must be a string', `${path}.op`);
+  if (typeof condition.op !== 'string') {
+    throw new ValidationError('Condition.op must be a string', `${path}.op`);
   }
 
   const validOps = [
@@ -48,82 +39,112 @@ function validateFilterAtom(atom: any, path: string = 'filterAtom'): asserts ato
     'lenEq', 'lenGt', 'lenLt', 'exists'
   ];
 
-  if (!validOps.includes(atom.op) && !atom.op.startsWith('custom:')) {
-    throw new ValidationError(`Invalid operator: ${atom.op}`, `${path}.op`);
+  const isCustomOp = condition.op.startsWith('custom:');
+  if (!validOps.includes(condition.op) && !isCustomOp) {
+    throw new ValidationError(`Invalid operator: ${condition.op}`, `${path}.op`);
+  }
+  
+  // value can be any JSON value - no type validation needed
+}
+
+function validateFilter(filter: any, path: string = 'filter'): asserts filter is Filter {
+  if (typeof filter !== 'object' || filter === null) {
+    throw new ValidationError('Filter must be an object', path);
   }
 
-  if (atom.value !== undefined && !isScalar(atom.value) && !Array.isArray(atom.value) && typeof atom.value !== 'object') {
-    throw new ValidationError('FilterAtom.value must be a Scalar, array, or object', `${path}.value`);
+  if (filter.and && Array.isArray(filter.and)) {
+    filter.and.forEach((f: any, i: number) => validateFilter(f, `${path}.and[${i}]`));
+  }
+  if (filter.or && Array.isArray(filter.or)) {
+    filter.or.forEach((f: any, i: number) => validateFilter(f, `${path}.or[${i}]`));
+  }
+  if (filter.not) {
+    validateFilter(filter.not, `${path}.not`);
+  }
+  if (filter.conditions && Array.isArray(filter.conditions)) {
+    filter.conditions.forEach((c: any, i: number) => validateCondition(c, `${path}.conditions[${i}]`));
   }
 }
 
-function validateFilterSpec(spec: any, path: string = 'filterSpec'): asserts spec is FilterSpec {
-  if (typeof spec !== 'object' || spec === null) {
-    throw new ValidationError('FilterSpec must be an object', path);
-  }
-
-  if (spec.and && Array.isArray(spec.and)) {
-    spec.and.forEach((s: any, i: number) => validateFilterSpec(s, `${path}.and[${i}]`));
-  }
-  if (spec.or && Array.isArray(spec.or)) {
-    spec.or.forEach((s: any, i: number) => validateFilterSpec(s, `${path}.or[${i}]`));
-  }
-  if (spec.not) {
-    validateFilterSpec(spec.not, `${path}.not`);
-  }
-  if (spec.atoms && Array.isArray(spec.atoms)) {
-    spec.atoms.forEach((a: any, i: number) => validateFilterAtom(a, `${path}.atoms[${i}]`));
-  }
-}
-
-function validateOrderBy(orderBy: any, path: string = 'orderBy'): asserts orderBy is OrderBySpec {
+function validateOrderBy(orderBy: any, path: string = 'orderBy'): asserts orderBy is OrderBy {
   if (typeof orderBy !== 'object' || orderBy === null) {
-    throw new ValidationError('OrderBySpec must be an object', path);
+    throw new ValidationError('OrderBy must be an object', path);
   }
   if (typeof orderBy.field !== 'string' || orderBy.field.length === 0) {
-    throw new ValidationError('OrderBySpec.field must be a non-empty string', `${path}.field`);
+    throw new ValidationError('OrderBy.field must be a non-empty string', `${path}.field`);
   }
-  if (orderBy.direction !== 'asc' && orderBy.direction !== 'desc') {
-    throw new ValidationError('OrderBySpec.direction must be "asc" or "desc"', `${path}.direction`);
-  }
+  // descending, nulls_first, case_sensitive are all booleans - no validation needed beyond type
 }
 
-export function validateQueryShape(shape: any): asserts shape is QueryShape {
-  if (typeof shape !== 'object' || shape === null) {
-    throw new ValidationError('QueryShape must be an object', 'queryShape');
-  }
-  if (typeof shape.model !== 'string' || shape.model.length === 0) {
-    throw new ValidationError('QueryShape.model must be a non-empty string', 'queryShape.model');
+export function validateStatement(statement: any): asserts statement is Statement {
+  if (typeof statement !== 'object' || statement === null) {
+    throw new ValidationError('Statement must be an object', 'statement');
   }
 
-  if (shape.where) {
-    validateFilterSpec(shape.where, 'queryShape.where');
-  }
-  if (shape.orderBy && Array.isArray(shape.orderBy)) {
-    shape.orderBy.forEach((o: any, i: number) => validateOrderBy(o, `queryShape.orderBy[${i}]`));
-  }
-  if (shape.take !== undefined && (typeof shape.take !== 'number' || !Number.isInteger(shape.take))) {
-    throw new ValidationError('QueryShape.take must be an integer', 'queryShape.take');
-  }
-  if (shape.skip !== undefined && (typeof shape.skip !== 'number' || !Number.isInteger(shape.skip))) {
-    throw new ValidationError('QueryShape.skip must be an integer', 'queryShape.skip');
-  }
-}
-
-export function validateMutationEvent(event: any): asserts event is MutationEvent {
-  if (typeof event !== 'object' || event === null) {
-    throw new ValidationError('MutationEvent must be an object', 'mutationEvent');
-  }
-  if (!Array.isArray(event.changes)) {
-    throw new ValidationError('MutationEvent.changes must be an array', 'mutationEvent.changes');
-  }
-
-  event.changes.forEach((change: any, i: number) => {
-    if (typeof change !== 'object' || change === null) {
-      throw new ValidationError(`Change must be an object`, `mutationEvent.changes[${i}]`);
+  if (statement.query) {
+    if (typeof statement.query !== 'object' || statement.query === null) {
+      throw new ValidationError('Statement.query must be an object', 'statement.query');
     }
-    if (!['create', 'update', 'delete', 'link', 'unlink'].includes(change.op || change.kind)) {
-      throw new ValidationError(`Invalid change operation`, `mutationEvent.changes[${i}].op`);
+    if (typeof statement.query.model !== 'string' || statement.query.model.length === 0) {
+      throw new ValidationError('Statement.query.model must be a non-empty string', 'statement.query.model');
+    }
+    if (statement.query.where) {
+      validateFilter(statement.query.where, 'statement.query.where');
+    }
+    if (statement.query.order_by && Array.isArray(statement.query.order_by)) {
+      statement.query.order_by.forEach((o: any, i: number) => validateOrderBy(o, `statement.query.order_by[${i}]`));
+    }
+    if (statement.query.limit !== undefined && (typeof statement.query.limit !== 'number' || !Number.isInteger(statement.query.limit))) {
+      throw new ValidationError('Statement.query.limit must be an integer', 'statement.query.limit');
+    }
+    if (statement.query.offset !== undefined && (typeof statement.query.offset !== 'number' || !Number.isInteger(statement.query.offset))) {
+      throw new ValidationError('Statement.query.offset must be an integer', 'statement.query.offset');
+    }
+  }
+
+  if (statement.pagination) {
+    if (typeof statement.pagination !== 'object' || statement.pagination === null) {
+      throw new ValidationError('Statement.pagination must be an object', 'statement.pagination');
+    }
+    const hasForward = statement.pagination.first !== undefined || statement.pagination.after !== undefined;
+    const hasBackward = statement.pagination.last !== undefined || statement.pagination.before !== undefined;
+    if (hasForward && hasBackward) {
+      throw new ValidationError('Cannot mix forward and backward pagination', 'statement.pagination');
+    }
+  }
+}
+
+export function validateMutation(mutation: any): asserts mutation is Mutation {
+  if (typeof mutation !== 'object' || mutation === null) {
+    throw new ValidationError('Mutation must be an object', 'mutation');
+  }
+  if (!Array.isArray(mutation.changes)) {
+    throw new ValidationError('Mutation.changes must be an array', 'mutation.changes');
+  }
+
+  mutation.changes.forEach((change: any, i: number) => {
+    if (typeof change !== 'object' || change === null) {
+      throw new ValidationError(`Change must be an object`, `mutation.changes[${i}]`);
+    }
+    if (!['insert', 'update', 'delete'].includes(change.action)) {
+      throw new ValidationError(`Invalid change action: must be insert, update, or delete`, `mutation.changes[${i}].action`);
+    }
+    if (typeof change.model !== 'string' || change.model.length === 0) {
+      throw new ValidationError('Change.model must be a non-empty string', `mutation.changes[${i}].model`);
+    }
+    
+    // Validate based on action
+    if (change.action === 'insert' && (!Array.isArray(change.set) || change.set.length === 0)) {
+      throw new ValidationError('Insert requires non-empty set', `mutation.changes[${i}].set`);
+    }
+    if (change.action === 'update' && (!Array.isArray(change.set) || change.set.length === 0)) {
+      throw new ValidationError('Update requires non-empty set', `mutation.changes[${i}].set`);
+    }
+    if (change.action === 'update' && !change.where) {
+      throw new ValidationError('Update requires where clause', `mutation.changes[${i}].where`);
+    }
+    if (change.action === 'delete' && !change.where) {
+      throw new ValidationError('Delete requires where clause', `mutation.changes[${i}].where`);
     }
   });
 }
@@ -132,16 +153,16 @@ export function validateDependencies(deps: any): asserts deps is Dependencies {
   if (typeof deps !== 'object' || deps === null) {
     throw new ValidationError('Dependencies must be an object', 'dependencies');
   }
-  if (typeof deps.shapeId !== 'string' || !/^s_[0-9a-f]{64}$/.test(deps.shapeId)) {
-    throw new ValidationError('Dependencies.shapeId must match pattern ^s_[0-9a-f]{64}$', 'dependencies.shapeId');
+  if (typeof deps.shape_id !== 'string' || !/^s_[0-9a-f]{64}$/.test(deps.shape_id)) {
+    throw new ValidationError('Dependencies.shape_id must match pattern ^s_[0-9a-f]{64}$', 'dependencies.shape_id');
   }
   if (typeof deps.records !== 'object' || deps.records === null) {
     throw new ValidationError('Dependencies.records must be an object', 'dependencies.records');
   }
-  if (!Array.isArray(deps.filterBounds)) {
-    throw new ValidationError('Dependencies.filterBounds must be an array', 'dependencies.filterBounds');
+  if (!Array.isArray(deps.filters)) {
+    throw new ValidationError('Dependencies.filters must be an array', 'dependencies.filters');
   }
-  if (!Array.isArray(deps.relationBounds)) {
-    throw new ValidationError('Dependencies.relationBounds must be an array', 'dependencies.relationBounds');
+  if (!Array.isArray(deps.includes)) {
+    throw new ValidationError('Dependencies.includes must be an array', 'dependencies.includes');
   }
 }

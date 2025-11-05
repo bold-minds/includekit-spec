@@ -3,7 +3,7 @@ package generators
 import (
 	"fmt"
 
-	"github.com/bold-minds/ik-spec/codegen/internal/parser"
+	"github.com/bold-minds/includekit-spec/codegen/internal/parser"
 )
 
 // Generator defines the interface for language-specific code generators

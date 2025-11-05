@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Setting up ik-spec repository"
+echo "🚀 Setting up includekit-spec repository"
 echo ""
 
 # Check prerequisites

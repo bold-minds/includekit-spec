@@ -3,14 +3,14 @@ package tests_test
 import (
 	"testing"
 
-	"github.com/bold-minds/ik-spec/go/tests"
-	"github.com/bold-minds/ik-spec/go/types"
+	"github.com/bold-minds/includekit-spec/go/tests"
+	"github.com/bold-minds/includekit-spec/go/types"
 )
 
 func TestValidateQueryShape_Comprehensive(t *testing.T) {
 	tcs := []struct {
 		name    string
-		shape   *types.QueryShape
+		shape   *types.Statement
 		wantErr bool
 		errMsg  string
 	}{
@@ -22,54 +22,65 @@ func TestValidateQueryShape_Comprehensive(t *testing.T) {
 		},
 		{
 			name: "empty model",
-			shape: &types.QueryShape{
-				Model: "",
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model: "",
+				},
 			},
 			wantErr: true,
 			errMsg:  "model must be",
 		},
 		{
-			name: "negative take",
-			shape: &types.QueryShape{
-				Model: "Post",
-				Take:  intPtr(-1),
-			},
-			wantErr: true,
-			errMsg:  "take must be non-negative",
-		},
-		{
-			name: "negative skip",
-			shape: &types.QueryShape{
-				Model: "Post",
-				Skip:  intPtr(-5),
-			},
-			wantErr: true,
-			errMsg:  "skip must be non-negative",
-		},
-		{
-			name: "invalid order direction",
-			shape: &types.QueryShape{
-				Model: "Post",
-				OrderBy: &[]types.OrderBySpec{
-					{Field: "id", Direction: "invalid"},
+			name: "negative limit",
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model: "Post",
+					Limit: intPtr(-1),
 				},
 			},
 			wantErr: true,
-			errMsg:  "direction must be",
+			errMsg:  "limit must be non-negative",
+		},
+		{
+			name: "negative offset",
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model:  "Post",
+					Offset: intPtr(-5),
+				},
+			},
+			wantErr: true,
+			errMsg:  "offset must be non-negative",
+		},
+		{
+			name: "valid with orderBy",
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model: "Post",
+					OrderBy: &[]types.OrderBy{
+						{Field: "id", Descending: boolPtr(true)},
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
 			name: "empty distinct field",
-			shape: &types.QueryShape{
-				Model:    "Post",
-				Distinct: &[]string{""},
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model:    "Post",
+					Distinct: &[]string{""},
+				},
 			},
 			wantErr: true,
 			errMsg:  "distinct field must be non-empty",
 		},
 		{
 			name: "empty groupBy field",
-			shape: &types.QueryShape{
-				Model:   "Post",
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model: "Post",
+				},
 				GroupBy: &[]string{"", "category"},
 			},
 			wantErr: true,
@@ -77,29 +88,35 @@ func TestValidateQueryShape_Comprehensive(t *testing.T) {
 		},
 		{
 			name: "valid simple shape",
-			shape: &types.QueryShape{
-				Model: "Post",
-				Take:  intPtr(10),
-				Skip:  intPtr(0),
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model:  "Post",
+					Limit:  intPtr(10),
+					Offset: intPtr(0),
+				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "valid with orderBy",
-			shape: &types.QueryShape{
-				Model: "Post",
-				OrderBy: &[]types.OrderBySpec{
-					{Field: "createdAt", Direction: "desc"},
-					{Field: "id", Direction: "asc"},
+			name: "valid with multiple orderBy",
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model: "Post",
+					OrderBy: &[]types.OrderBy{
+						{Field: "createdAt", Descending: boolPtr(true)},
+						{Field: "id", Descending: boolPtr(false)},
+					},
 				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid with distinct",
-			shape: &types.QueryShape{
-				Model:    "Post",
-				Distinct: &[]string{"authorId", "status"},
+			shape: &types.Statement{
+				Query: &types.Query{
+					Model:    "Post",
+					Distinct: &[]string{"authorId", "status"},
+				},
 			},
 			wantErr: false,
 		},
@@ -137,10 +154,10 @@ func TestValidateDependencies_Comprehensive(t *testing.T) {
 		{
 			name: "invalid shapeId format",
 			deps: &types.Dependencies{
-				ShapeID:        "invalid",
-				Records:        map[string][]string{},
-				FilterBounds:   []types.FilterSpec{},
-				RelationBounds: []types.RelationFilterBound{},
+				ShapeID:  "invalid",
+				Records:  map[string][]string{},
+				Filters:  []types.Filter{},
+				Includes: []types.Include{},
 			},
 			wantErr: true,
 			errMsg:  "shapeId must match pattern",
@@ -148,10 +165,10 @@ func TestValidateDependencies_Comprehensive(t *testing.T) {
 		{
 			name: "shapeId too short",
 			deps: &types.Dependencies{
-				ShapeID:        "s_abc",
-				Records:        map[string][]string{},
-				FilterBounds:   []types.FilterSpec{},
-				RelationBounds: []types.RelationFilterBound{},
+				ShapeID:  "s_abc",
+				Records:  map[string][]string{},
+				Filters:  []types.Filter{},
+				Includes: []types.Include{},
 			},
 			wantErr: true,
 			errMsg:  "shapeId must match pattern",
@@ -159,9 +176,9 @@ func TestValidateDependencies_Comprehensive(t *testing.T) {
 		{
 			name: "missing records",
 			deps: &types.Dependencies{
-				ShapeID:        "s_" + string(make([]byte, 64)),
-				FilterBounds:   []types.FilterSpec{},
-				RelationBounds: []types.RelationFilterBound{},
+				ShapeID:  "s_" + string(make([]byte, 64)),
+				Filters:  []types.Filter{},
+				Includes: []types.Include{},
 			},
 			wantErr: true,
 			errMsg:  "records must be",
@@ -169,10 +186,10 @@ func TestValidateDependencies_Comprehensive(t *testing.T) {
 		{
 			name: "valid dependencies",
 			deps: &types.Dependencies{
-				ShapeID:        "s_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-				Records:        map[string][]string{"Post": {"1", "2"}},
-				FilterBounds:   []types.FilterSpec{},
-				RelationBounds: []types.RelationFilterBound{},
+				ShapeID:  "s_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				Records:  map[string][]string{"Post": {"1", "2"}},
+				Filters:  []types.Filter{},
+				Includes: []types.Include{},
 			},
 			wantErr: false,
 		},
@@ -195,18 +212,19 @@ func TestValidateDependencies_Comprehensive(t *testing.T) {
 }
 
 func TestCanonicalizeQueryShape_Determinism(t *testing.T) {
-	shape := &types.QueryShape{
-		Model: "Post",
-		Where: &types.FilterSpec{
-			Atoms: &[]types.FilterAtom{
-				{Field: "status", Op: "eq", Value: "published"},
-				{Field: "views", Op: "gt", Value: 100},
+	shape := &types.Statement{
+		Query: &types.Query{
+			Model: "Post",
+			Where: &types.Filter{
+				Conditions: &[]types.Condition{
+					{Field: "status", Op: "eq", Value: "published"},
+				},
 			},
+			OrderBy: &[]types.OrderBy{
+				{Field: "createdAt", Descending: boolPtr(true)},
+			},
+			Limit: intPtr(10),
 		},
-		OrderBy: &[]types.OrderBySpec{
-			{Field: "createdAt", Direction: "desc"},
-		},
-		Take: intPtr(10),
 	}
 
 	// Canonicalize multiple times
@@ -242,6 +260,10 @@ func TestCanonicalizeQueryShape_Determinism(t *testing.T) {
 // Helper functions
 func intPtr(i int) *int {
 	return &i
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
 
 func contains(s, substr string) bool {

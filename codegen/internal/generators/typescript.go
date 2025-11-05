@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bold-minds/ik-spec/codegen/internal/parser"
-	"github.com/bold-minds/ik-spec/codegen/internal/templates"
+	"github.com/bold-minds/includekit-spec/codegen/internal/parser"
+	"github.com/bold-minds/includekit-spec/codegen/internal/templates"
 )
 
 type TypeScriptGenerator struct{}

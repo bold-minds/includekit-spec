@@ -1,4 +1,4 @@
-module github.com/bold-minds/ik-spec/go
+module github.com/bold-minds/includekit-spec/go
 
 go 1.22
 

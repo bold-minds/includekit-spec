@@ -1,4 +1,4 @@
-# @includekit/types-testkit
+# @includekit/spec-testkit
 
 **Testkit package** for IncludeKit Universal Format - runtime validators, JSON Canonicalization, and shapeId computation.
 
@@ -7,7 +7,7 @@
 ## Installation
 
 ```bash
-npm install --save-dev @includekit/types-testkit
+npm install --save-dev @includekit/spec-testkit
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ import {
   canonicalize,
   computeShapeId,
   computeQueryShapeId,
-} from '@includekit/types-testkit';
+} from '@includekit/spec-testkit';
 
 const shape = {
   model: 'Post',

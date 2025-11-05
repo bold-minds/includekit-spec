@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bold-minds/ik-spec/codegen/internal/parser"
+	"github.com/bold-minds/includekit-spec/codegen/internal/parser"
 )
 
 type GoGenerator struct{}

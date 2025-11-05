@@ -9,15 +9,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bold-minds/ik-spec/go/tests"
-	types "github.com/bold-minds/ik-spec/go/types"
+	"github.com/bold-minds/includekit-spec/go/tests"
+	"github.com/bold-minds/includekit-spec/go/types"
 )
 
 type Vector struct {
-	Name              string           `json:"name"`
-	Shape             types.QueryShape `json:"shape"`
-	ExpectedCanonical string           `json:"expectedCanonical"`
-	ExpectedShapeID   string           `json:"expectedShapeId"`
+	Name              string          `json:"name"`
+	Shape             types.Statement `json:"shape"`
+	ExpectedCanonical string          `json:"expectedCanonical"`
+	ExpectedShapeID   string          `json:"expectedShapeId"`
 }
 
 func TestConformanceQueryShapes(t *testing.T) {
@@ -54,7 +54,7 @@ func TestConformanceQueryShapes(t *testing.T) {
 
 			// Compute shapeId
 			shapeID := tests.ComputeShapeID(canonical)
-			
+
 			// CRITICAL: Compare against expected shapeId
 			if shapeID != v.ExpectedShapeID {
 				t.Errorf("ShapeID mismatch for %s:\n  got:  %s\n  want: %s",
@@ -84,8 +84,10 @@ func TestConformanceQueryShapes(t *testing.T) {
 }
 
 func TestValidationRejectsInvalidShapes(t *testing.T) {
-	invalidShape := &types.QueryShape{
-		Model: "", // empty model
+	invalidShape := &types.Statement{
+		Query: &types.Query{
+			Model: "", // empty model
+		},
 	}
 
 	err := tests.ValidateQueryShape(invalidShape)

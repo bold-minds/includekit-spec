@@ -29,7 +29,7 @@ import type {`, schemaFile) + `
   FilterAtom,
   OrderBySpec,
   Scalar,
-} from '@includekit/types';
+} from '@includekit/spec';
 
 export class ValidationError extends Error {
   constructor(message: string, public path: string = '') {

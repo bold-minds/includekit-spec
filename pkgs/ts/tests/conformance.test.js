@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import {
   canonicalizeQueryShape,
   computeShapeId,
-  validateQueryShape,
+  validateStatement,
 } from './dist/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -19,7 +19,7 @@ test('conformance: query shapes produce expected canonical JSON and shapeId', as
   for (const vector of vectors) {
     await test(`vector: ${vector.name}`, () => {
       // Validate the shape
-      validateQueryShape(vector.shape);
+      validateStatement(vector.shape);
 
       // Canonicalize
       const canonical = canonicalizeQueryShape(vector.shape);
@@ -51,10 +51,10 @@ test('conformance: query shapes produce expected canonical JSON and shapeId', as
 
 test('conformance: validation catches invalid shapes', () => {
   assert.throws(() => {
-    validateQueryShape({ model: '' }); // empty model
+    validateStatement({ query: { model: '' } }); // empty model
   }, /model must be a non-empty string/);
 
   assert.throws(() => {
-    validateQueryShape({ model: 'Post', orderBy: [{ field: 'id', direction: 'invalid' }] });
-  }, /direction must be "asc" or "desc"/);
+    validateStatement({ query: { model: 'Post', order_by: [{ field: '' }] } }); // empty field
+  }, /field must be a non-empty string/);
 });

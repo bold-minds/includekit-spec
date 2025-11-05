@@ -64,14 +64,14 @@ jobs:
           
           # TypeScript: testkit should only be imported in test files
           if grep -r --include="*.ts" --exclude="*.test.ts" --exclude="*.spec.ts" \
-            "@includekit/types-testkit" pkgs/ts/types/ 2>/dev/null; then
+            "@includekit/spec-testkit" pkgs/ts/types/ 2>/dev/null; then
             echo "❌ ERROR: Found testkit import in production TS code"
             exit 1
           fi
           
           # Go: tests package should only be imported in test files
           if grep -r --include="*.go" --exclude="*_test.go" \
-            "github.com/bold-minds/ik-spec/go/tests" pkgs/go/types/ 2>/dev/null; then
+            "github.com/bold-minds/includekit-spec/go/tests" pkgs/go/types/ 2>/dev/null; then
             echo "❌ ERROR: Found testkit import in production Go code"
             exit 1
           fi

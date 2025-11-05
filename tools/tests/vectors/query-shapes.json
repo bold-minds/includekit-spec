@@ -1,112 +1,23 @@
 [
   {
-    "name": "simple-query",
+    "name": "minimal-query",
     "shape": {
-      "model": "Post",
-      "orderBy": [
-        {
-          "direction": "desc",
-          "field": "createdAt"
-        }
-      ],
-      "take": 10,
-      "where": {
-        "atoms": [
-          {
-            "field": "published",
-            "op": "eq",
-            "value": true
-          }
-        ]
+      "query": {
+        "model": "Post"
       }
     },
-    "expectedCanonical": "{\"model\":\"Post\",\"orderBy\":[{\"direction\":\"desc\",\"field\":\"createdAt\"}],\"take\":10,\"where\":{\"atoms\":[{\"field\":\"published\",\"op\":\"eq\",\"value\":true}]}}",
-    "expectedShapeId": "s_793614d2263936e5d1909baa7c98ce6070abc795bddf0347b86ffc1b75d0453f"
+    "expectedCanonical": "{\"query\":{\"model\":\"Post\"}}",
+    "expectedShapeId": "s_adaf8e8a5edf5712775121416d66d915791648c96db3087d88c8ac0fec0e1dad"
   },
   {
-    "name": "with-relations",
+    "name": "simple-query-with-filter",
     "shape": {
-      "include": {
-        "posts": {
-          "orderBy": [
+      "query": {
+        "model": "Post",
+        "where": {
+          "conditions": [
             {
-              "direction": "desc",
-              "field": "createdAt"
-            }
-          ],
-          "where": {
-            "atoms": [
-              {
-                "field": "published",
-                "op": "eq",
-                "value": true
-              }
-            ]
-          }
-        }
-      },
-      "model": "User",
-      "select": [
-        "id",
-        "name",
-        "email"
-      ]
-    },
-    "expectedCanonical": "{\"include\":{\"posts\":{\"orderBy\":[{\"direction\":\"desc\",\"field\":\"createdAt\"}],\"where\":{\"atoms\":[{\"field\":\"published\",\"op\":\"eq\",\"value\":true}]}}},\"model\":\"User\",\"select\":[\"id\",\"name\",\"email\"]}",
-    "expectedShapeId": "s_a9594081477968db9fe30a78d69e19d5fbebc14b5c07550be2d3be414ac94d13"
-  },
-  {
-    "name": "complex-and-or-filter",
-    "shape": {
-      "model": "Post",
-      "where": {
-        "and": [
-          {
-            "atoms": [
-              {
-                "field": "status",
-                "op": "eq",
-                "value": "published"
-              }
-            ]
-          },
-          {
-            "or": [
-              {
-                "atoms": [
-                  {
-                    "field": "views",
-                    "op": "gt",
-                    "value": 1000
-                  }
-                ]
-              },
-              {
-                "atoms": [
-                  {
-                    "field": "featured",
-                    "op": "eq",
-                    "value": true
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "expectedCanonical": "{\"model\":\"Post\",\"where\":{\"and\":[{\"atoms\":[{\"field\":\"status\",\"op\":\"eq\",\"value\":\"published\"}]},{\"or\":[{\"atoms\":[{\"field\":\"views\",\"op\":\"gt\",\"value\":1000}]},{\"atoms\":[{\"field\":\"featured\",\"op\":\"eq\",\"value\":true}]}]}]}}",
-    "expectedShapeId": "s_b7d923415826047db93222c048bd1463704217ff5a7d07a80fcbf49fc932304a"
-  },
-  {
-    "name": "not-filter",
-    "shape": {
-      "model": "Comment",
-      "where": {
-        "not": {
-          "atoms": [
-            {
-              "field": "deleted",
+              "field": "published",
               "op": "eq",
               "value": true
             }
@@ -114,32 +25,192 @@
         }
       }
     },
-    "expectedCanonical": "{\"model\":\"Comment\",\"where\":{\"not\":{\"atoms\":[{\"field\":\"deleted\",\"op\":\"eq\",\"value\":true}]}}}",
-    "expectedShapeId": "s_c194054813f6bed2b79674c699b4639ce5d5d1a670f059927ecff680786baee7"
+    "expectedCanonical": "{\"query\":{\"model\":\"Post\",\"where\":{\"conditions\":[{\"field\":\"published\",\"op\":\"eq\",\"value\":true}]}}}",
+    "expectedShapeId": "s_1c3bf8a409e0a58c84a612da6107ae81c894fd4d47711d4bab5edc4683d7debf"
   },
   {
-    "name": "with-distinct",
+    "name": "with-order-and-limit",
     "shape": {
-      "distinct": [
-        "authorId"
-      ],
-      "model": "Post",
-      "select": [
-        "authorId",
-        "category"
-      ]
+      "query": {
+        "limit": 10,
+        "model": "Post",
+        "order_by": [
+          {
+            "descending": true,
+            "field": "createdAt"
+          }
+        ]
+      }
     },
-    "expectedCanonical": "{\"distinct\":[\"authorId\"],\"model\":\"Post\",\"select\":[\"authorId\",\"category\"]}",
-    "expectedShapeId": "s_68a18b4b20fc3a6ab7f882d35e71f2bdb1b14b91ab308827ff809894331497a2"
+    "expectedCanonical": "{\"query\":{\"limit\":10,\"model\":\"Post\",\"order_by\":[{\"descending\":true,\"field\":\"createdAt\"}]}}",
+    "expectedShapeId": "s_8b0a77c92876096c06e0f5519d31f9e037e873c60e437073e54f9df1690b59ba"
   },
   {
-    "name": "with-groupby-having",
+    "name": "with-fields-and-distinct",
     "shape": {
-      "groupBy": [
+      "query": {
+        "distinct": [
+          "authorId"
+        ],
+        "fields": [
+          "id",
+          "title"
+        ],
+        "model": "Post"
+      }
+    },
+    "expectedCanonical": "{\"query\":{\"distinct\":[\"authorId\"],\"fields\":[\"id\",\"title\"],\"model\":\"Post\"}}",
+    "expectedShapeId": "s_f86b481777c8233c429f009344bbc1ed75678fcebd526e165aaf731c2c4a02e1"
+  },
+  {
+    "name": "with-includes",
+    "shape": {
+      "includes": [
+        {
+          "query": {
+            "fields": [
+              "id",
+              "title"
+            ],
+            "model": "posts"
+          }
+        }
+      ],
+      "query": {
+        "model": "User"
+      }
+    },
+    "expectedCanonical": "{\"includes\":[{\"query\":{\"fields\":[\"id\",\"title\"],\"model\":\"posts\"}}],\"query\":{\"model\":\"User\"}}",
+    "expectedShapeId": "s_1981c993aec073ec26bc55ff6ff86b0db87f7be898e7d3984df8fdbb5d2a1752"
+  },
+  {
+    "name": "with-nested-includes",
+    "shape": {
+      "includes": [
+        {
+          "includes": [
+            {
+              "query": {
+                "limit": 5,
+                "model": "comments"
+              }
+            }
+          ],
+          "query": {
+            "model": "posts"
+          }
+        }
+      ],
+      "query": {
+        "model": "User"
+      }
+    },
+    "expectedCanonical": "{\"includes\":[{\"includes\":[{\"query\":{\"limit\":5,\"model\":\"comments\"}}],\"query\":{\"model\":\"posts\"}}],\"query\":{\"model\":\"User\"}}",
+    "expectedShapeId": "s_915637918216c505fd4f8858e65097ed089a68dd424904ebfed447cd36b466c5"
+  },
+  {
+    "name": "with-relation-filter",
+    "shape": {
+      "includes": [
+        {
+          "kind": "some",
+          "query": {
+            "model": "posts",
+            "where": {
+              "conditions": [
+                {
+                  "field": "published",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "query": {
+        "model": "User"
+      }
+    },
+    "expectedCanonical": "{\"includes\":[{\"kind\":\"some\",\"query\":{\"model\":\"posts\",\"where\":{\"conditions\":[{\"field\":\"published\",\"op\":\"eq\",\"value\":true}]}}}],\"query\":{\"model\":\"User\"}}",
+    "expectedShapeId": "s_2d1296093865912984546b940417ef4b2cea9abb9f44682abf48f7689271bb4c"
+  },
+  {
+    "name": "with-pagination",
+    "shape": {
+      "pagination": {
+        "after": "eyJpZCI6InBvc3RfMTIzIn0=",
+        "first": 20
+      },
+      "query": {
+        "model": "Post",
+        "order_by": [
+          {
+            "descending": true,
+            "field": "createdAt"
+          },
+          {
+            "field": "id"
+          }
+        ]
+      }
+    },
+    "expectedCanonical": "{\"pagination\":{\"after\":\"eyJpZCI6InBvc3RfMTIzIn0=\",\"first\":20},\"query\":{\"model\":\"Post\",\"order_by\":[{\"descending\":true,\"field\":\"createdAt\"},{\"field\":\"id\"}]}}",
+    "expectedShapeId": "s_a772b0b7abc9254e4fcd5bb323d21cbc5f2871f385c202243f7d74aacbb1cc3d"
+  },
+  {
+    "name": "complex-filter",
+    "shape": {
+      "query": {
+        "model": "Post",
+        "where": {
+          "and": [
+            {
+              "conditions": [
+                {
+                  "field": "published",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "or": [
+                {
+                  "conditions": [
+                    {
+                      "field": "featured",
+                      "op": "eq",
+                      "value": true
+                    }
+                  ]
+                },
+                {
+                  "conditions": [
+                    {
+                      "field": "views",
+                      "op": "gte",
+                      "value": 100
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "expectedCanonical": "{\"query\":{\"model\":\"Post\",\"where\":{\"and\":[{\"conditions\":[{\"field\":\"published\",\"op\":\"eq\",\"value\":true}]},{\"or\":[{\"conditions\":[{\"field\":\"featured\",\"op\":\"eq\",\"value\":true}]},{\"conditions\":[{\"field\":\"views\",\"op\":\"gte\",\"value\":100}]}]}]}}}",
+    "expectedShapeId": "s_a1f1b2ade7627f2d55d7e92ee7a45bf917106ddd634daccb35a20d9ddd1c8d7a"
+  },
+  {
+    "name": "with-group-by-having",
+    "shape": {
+      "group_by": [
         "authorId"
       ],
       "having": {
-        "atoms": [
+        "conditions": [
           {
             "field": "count",
             "op": "gt",
@@ -147,193 +218,15 @@
           }
         ]
       },
-      "model": "Post",
-      "select": [
-        "authorId"
-      ]
-    },
-    "expectedCanonical": "{\"groupBy\":[\"authorId\"],\"having\":{\"atoms\":[{\"field\":\"count\",\"op\":\"gt\",\"value\":5}]},\"model\":\"Post\",\"select\":[\"authorId\"]}",
-    "expectedShapeId": "s_8c4b52e16d5244c02b991641eceb1e644a7e011b566978b41729cf076ef0775c"
-  },
-  {
-    "name": "nested-includes",
-    "shape": {
-      "include": {
-        "posts": {
-          "include": {
-            "comments": {
-              "take": 5,
-              "where": {
-                "atoms": [
-                  {
-                    "field": "approved",
-                    "op": "eq",
-                    "value": true
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      "model": "User"
-    },
-    "expectedCanonical": "{\"include\":{\"posts\":{\"include\":{\"comments\":{\"take\":5,\"where\":{\"atoms\":[{\"field\":\"approved\",\"op\":\"eq\",\"value\":true}]}}}}},\"model\":\"User\"}",
-    "expectedShapeId": "s_19a2d017fab938d4952bfe734234545344d882ef8e266490fe68ed1e3654aac1"
-  },
-  {
-    "name": "with-skip-take",
-    "shape": {
-      "model": "Post",
-      "orderBy": [
-        {
-          "direction": "desc",
-          "field": "createdAt"
-        }
-      ],
-      "skip": 10,
-      "take": 20
-    },
-    "expectedCanonical": "{\"model\":\"Post\",\"orderBy\":[{\"direction\":\"desc\",\"field\":\"createdAt\"}],\"skip\":10,\"take\":20}",
-    "expectedShapeId": "s_a927cb0609f39c1e86aacc86c4f1146983dc5a8c6980020f7d45c2936f375f96"
-  },
-  {
-    "name": "multiple-orderby",
-    "shape": {
-      "model": "Post",
-      "orderBy": [
-        {
-          "direction": "desc",
-          "field": "featured"
-        },
-        {
-          "direction": "desc",
-          "field": "views"
-        },
-        {
-          "direction": "asc",
-          "field": "createdAt",
-          "nulls": "last"
-        }
-      ]
-    },
-    "expectedCanonical": "{\"model\":\"Post\",\"orderBy\":[{\"direction\":\"desc\",\"field\":\"featured\"},{\"direction\":\"desc\",\"field\":\"views\"},{\"direction\":\"asc\",\"field\":\"createdAt\",\"nulls\":\"last\"}]}",
-    "expectedShapeId": "s_2c26eb6ee1eddc7807940427bf8eaf00da96dc2d277b70ed9a58613e86ec18eb"
-  },
-  {
-    "name": "in-operator",
-    "shape": {
-      "model": "Post",
-      "where": {
-        "atoms": [
-          {
-            "field": "status",
-            "op": "in",
-            "value": [
-              "published",
-              "featured"
-            ]
-          }
-        ]
+      "query": {
+        "fields": [
+          "authorId",
+          "COUNT(*) as count"
+        ],
+        "model": "Post"
       }
     },
-    "expectedCanonical": "{\"model\":\"Post\",\"where\":{\"atoms\":[{\"field\":\"status\",\"op\":\"in\",\"value\":[\"published\",\"featured\"]}]}}",
-    "expectedShapeId": "s_0c5f189dba8017ce69fab53f72db11f08660dbf014a8547f7fb7d370c4877d57"
-  },
-  {
-    "name": "contains-operator",
-    "shape": {
-      "model": "Post",
-      "where": {
-        "atoms": [
-          {
-            "field": "title",
-            "op": "contains",
-            "value": "golang"
-          },
-          {
-            "field": "tags",
-            "op": "has",
-            "value": "tutorial"
-          }
-        ]
-      }
-    },
-    "expectedCanonical": "{\"model\":\"Post\",\"where\":{\"atoms\":[{\"field\":\"title\",\"op\":\"contains\",\"value\":\"golang\"},{\"field\":\"tags\",\"op\":\"has\",\"value\":\"tutorial\"}]}}",
-    "expectedShapeId": "s_1fe480d9bd86312551a5a0cf71116b7f3c9e677cdf965799d47af4bab7c6619f"
-  },
-  {
-    "name": "comparison-operators",
-    "shape": {
-      "model": "Post",
-      "where": {
-        "and": [
-          {
-            "atoms": [
-              {
-                "field": "views",
-                "op": "gte",
-                "value": 100
-              }
-            ]
-          },
-          {
-            "atoms": [
-              {
-                "field": "views",
-                "op": "lte",
-                "value": 10000
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "expectedCanonical": "{\"model\":\"Post\",\"where\":{\"and\":[{\"atoms\":[{\"field\":\"views\",\"op\":\"gte\",\"value\":100}]},{\"atoms\":[{\"field\":\"views\",\"op\":\"lte\",\"value\":10000}]}]}}",
-    "expectedShapeId": "s_dd843972719a6f7c8961118fcae16a69551db05a0c9f7d7cfbe1c68617400887"
-  },
-  {
-    "name": "relation-filter-some",
-    "shape": {
-      "include": {
-        "posts": {
-          "relationFilter": [
-            {
-              "kind": "some",
-              "relation": "comments",
-              "where": {
-                "atoms": [
-                  {
-                    "field": "rating",
-                    "op": "gte",
-                    "value": 4
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      },
-      "model": "User"
-    },
-    "expectedCanonical": "{\"include\":{\"posts\":{\"relationFilter\":[{\"kind\":\"some\",\"relation\":\"comments\",\"where\":{\"atoms\":[{\"field\":\"rating\",\"op\":\"gte\",\"value\":4}]}}]}},\"model\":\"User\"}",
-    "expectedShapeId": "s_22035c23985864181fe5887ab073883abad3e194e9b7974efbce0132f36dc5e8"
-  },
-  {
-    "name": "empty-select",
-    "shape": {
-      "model": "Post",
-      "select": []
-    },
-    "expectedCanonical": "{\"model\":\"Post\",\"select\":[]}",
-    "expectedShapeId": "s_941f9e2f5be6c68c11efc08fea22b332e218455b66d7201d5069fe1aa7f70dda"
-  },
-  {
-    "name": "minimal-query",
-    "shape": {
-      "model": "Post"
-    },
-    "expectedCanonical": "{\"model\":\"Post\"}",
-    "expectedShapeId": "s_f0c23f834e8b98f758807cb62427b589006381d2004494f510ca1e51d3663ffb"
+    "expectedCanonical": "{\"group_by\":[\"authorId\"],\"having\":{\"conditions\":[{\"field\":\"count\",\"op\":\"gt\",\"value\":5}]},\"query\":{\"fields\":[\"authorId\",\"COUNT(*) as count\"],\"model\":\"Post\"}}",
+    "expectedShapeId": "s_60131a5bcfc2026fa3a3472103981e3f92c25a11b17cf7498666e81dbf11ebc7"
   }
 ]

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Building includekit-types"
+echo "🚀 Building includekit-spec"
 
 # Build the Go codegen tool
 echo "📦 Building codegen tool..."

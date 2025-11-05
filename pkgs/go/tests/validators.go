@@ -3,13 +3,13 @@
 //
 // This is a TESTKIT package - for testing and development only.
 // DO NOT import this package in production code. Use the production
-// package (github.com/bold-minds/ik-spec/go/types) instead.
+// package (github.com/bold-minds/includekit-spec/go/types) instead.
 package tests
 
 import (
 	"fmt"
 
-	"github.com/bold-minds/ik-spec/go/types"
+	"github.com/bold-minds/includekit-spec/go/types"
 )
 
 // Constants for validation
@@ -32,94 +32,58 @@ func (e *ValidationError) Error() string {
 	return e.Message
 }
 
-// ValidateQueryShape validates a QueryShape according to the
-// IncludeKit Universal Format specification.
+// ValidateQueryShape validates a Statement structure.
 //
 // It checks that:
-//   - Model is a non-empty string
-//   - All filter specifications are valid
-//   - OrderBy specifications are valid
-//   - Take and Skip are non-negative if present
-//   - Distinct fields are non-empty if present
+//   - Query is present with non-empty model
+//   - All filters, orderBy specs, pagination are valid
+//   - Limit and offset are non-negative
+//   - Distinct and groupBy fields are non-empty strings
 //   - Nested includes are valid
 //
 // Returns a ValidationError if any constraint is violated.
-func ValidateQueryShape(shape *types.QueryShape) error {
-	if shape == nil {
-		return &ValidationError{Message: "QueryShape cannot be nil", Path: "queryShape"}
-	}
-	if shape.Model == "" {
-		return &ValidationError{Message: "model must be a non-empty string", Path: "queryShape.model"}
+func ValidateQueryShape(stmt *types.Statement) error {
+	if stmt == nil {
+		return &ValidationError{Message: "Statement cannot be nil", Path: "statement"}
 	}
 
-	// Validate where clause
-	if shape.Where != nil {
-		if err := validateFilterSpec(shape.Where, "queryShape.where"); err != nil {
+	// Validate query
+	if stmt.Query != nil {
+		if err := validateQuery(stmt.Query, "statement.query"); err != nil {
 			return err
 		}
 	}
 
-	// Validate orderBy
-	if shape.OrderBy != nil {
-		for i, ob := range *shape.OrderBy {
-			if err := validateOrderBy(&ob, fmt.Sprintf("queryShape.orderBy[%d]", i)); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Validate take (must be non-negative)
-	if shape.Take != nil && *shape.Take < 0 {
-		return &ValidationError{Message: "take must be non-negative", Path: "queryShape.take"}
-	}
-
-	// Validate skip (must be non-negative)
-	if shape.Skip != nil && *shape.Skip < 0 {
-		return &ValidationError{Message: "skip must be non-negative", Path: "queryShape.skip"}
-	}
-
-	// Validate distinct fields
-	if shape.Distinct != nil {
-		for i, field := range *shape.Distinct {
-			if field == "" {
-				return &ValidationError{
-					Message: "distinct field must be non-empty",
-					Path:    fmt.Sprintf("queryShape.distinct[%d]", i),
-				}
-			}
-		}
-	}
-
 	// Validate groupBy fields
-	if shape.GroupBy != nil {
-		for i, field := range *shape.GroupBy {
+	if stmt.GroupBy != nil {
+		for i, field := range *stmt.GroupBy {
 			if field == "" {
 				return &ValidationError{
 					Message: "groupBy field must be non-empty",
-					Path:    fmt.Sprintf("queryShape.groupBy[%d]", i),
+					Path:    fmt.Sprintf("statement.groupBy[%d]", i),
 				}
 			}
 		}
 	}
 
 	// Validate having clause
-	if shape.Having != nil {
-		if err := validateFilterSpec(shape.Having, "queryShape.having"); err != nil {
+	if stmt.Having != nil {
+		if err := validateFilterSpec(stmt.Having, "statement.having"); err != nil {
 			return err
 		}
 	}
 
-	// Validate cursor
-	if shape.Cursor != nil {
-		if err := validateCursor(shape.Cursor, "queryShape.cursor"); err != nil {
+	// Validate pagination
+	if stmt.Pagination != nil {
+		if err := validatePagination(stmt.Pagination, "statement.pagination"); err != nil {
 			return err
 		}
 	}
 
-	// Validate nested includes
-	if shape.Include != nil {
-		for relation, include := range shape.Include {
-			if err := validateInclude(&include, fmt.Sprintf("queryShape.include[%s]", relation)); err != nil {
+	// Validate includes
+	if stmt.Includes != nil {
+		for i, include := range stmt.Includes {
+			if err := validateInclude(&include, fmt.Sprintf("statement.includes[%d]", i)); err != nil {
 				return err
 			}
 		}
@@ -128,22 +92,147 @@ func ValidateQueryShape(shape *types.QueryShape) error {
 	return nil
 }
 
-// ValidateMutationEvent validates a MutationEvent
-func ValidateMutationEvent(event *types.MutationEvent) error {
+func validateQuery(q *types.Query, path string) error {
+	if q.Model == "" {
+		return &ValidationError{Message: "model must be a non-empty string", Path: fmt.Sprintf("%s.model", path)}
+	}
+
+	// Validate where clause
+	if q.Where != nil {
+		if err := validateFilterSpec(q.Where, fmt.Sprintf("%s.where", path)); err != nil {
+			return err
+		}
+	}
+
+	// Validate orderBy
+	if q.OrderBy != nil {
+		for i, ob := range *q.OrderBy {
+			if err := validateOrderBy(&ob, fmt.Sprintf("%s.orderBy[%d]", path, i)); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Validate limit (must be non-negative)
+	if q.Limit != nil && *q.Limit < 0 {
+		return &ValidationError{Message: "limit must be non-negative", Path: fmt.Sprintf("%s.limit", path)}
+	}
+
+	// Validate offset (must be non-negative)
+	if q.Offset != nil && *q.Offset < 0 {
+		return &ValidationError{Message: "offset must be non-negative", Path: fmt.Sprintf("%s.offset", path)}
+	}
+
+	// Validate distinct fields
+	if q.Distinct != nil {
+		for i, field := range *q.Distinct {
+			if field == "" {
+				return &ValidationError{
+					Message: "distinct field must be non-empty",
+					Path:    fmt.Sprintf("%s.distinct[%d]", path, i),
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// ValidateMutationEvent validates a Mutation
+func ValidateMutationEvent(event *types.Mutation) error {
 	if event == nil {
-		return &ValidationError{Message: "MutationEvent cannot be nil", Path: "mutationEvent"}
+		return &ValidationError{Message: "Mutation cannot be nil", Path: "mutation"}
 	}
 	if event.Changes == nil {
-		return &ValidationError{Message: "changes must be an array", Path: "mutationEvent.changes"}
+		return &ValidationError{Message: "changes must be an array", Path: "mutation.changes"}
 	}
 
 	for i, change := range event.Changes {
-		validOps := map[string]bool{"create": true, "update": true, "delete": true, "link": true, "unlink": true}
-		if !validOps[change.Op] {
+		if err := validateDataChange(&change, fmt.Sprintf("mutation.changes[%d]", i)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func validateDataChange(change *types.Change, path string) error {
+	// Validate model
+	if change.Model == "" {
+		return &ValidationError{Message: "model must be non-empty", Path: fmt.Sprintf("%s.model", path)}
+	}
+
+	// Validate action
+	validActions := map[string]bool{"insert": true, "update": true, "delete": true}
+	if !validActions[change.Action] {
+		return &ValidationError{
+			Message: fmt.Sprintf("action must be 'insert', 'update', or 'delete', got: %s", change.Action),
+			Path:    fmt.Sprintf("%s.action", path),
+		}
+	}
+
+	// Validate based on action type
+	switch change.Action {
+	case "insert":
+		// Insert requires Set, no Where
+		if len(change.Sets) == 0 {
 			return &ValidationError{
-				Message: fmt.Sprintf("invalid operation: %s", change.Op),
-				Path:    fmt.Sprintf("mutationEvent.changes[%d].op", i),
+				Message: "insert requires non-empty set",
+				Path:    fmt.Sprintf("%s.set", path),
 			}
+		}
+		if change.Where != nil {
+			return &ValidationError{
+				Message: "insert cannot have where clause",
+				Path:    fmt.Sprintf("%s.where", path),
+			}
+		}
+
+	case "update":
+		// Update requires both Set and Where
+		if len(change.Sets) == 0 {
+			return &ValidationError{
+				Message: "update requires non-empty set",
+				Path:    fmt.Sprintf("%s.set", path),
+			}
+		}
+		if change.Where == nil {
+			return &ValidationError{
+				Message: "update requires where clause",
+				Path:    fmt.Sprintf("%s.where", path),
+			}
+		}
+
+	case "delete":
+		// Delete requires Where, no Set
+		if len(change.Sets) > 0 {
+			return &ValidationError{
+				Message: "delete cannot have set clause",
+				Path:    fmt.Sprintf("%s.set", path),
+			}
+		}
+		if change.Where == nil {
+			return &ValidationError{
+				Message: "delete requires where clause",
+				Path:    fmt.Sprintf("%s.where", path),
+			}
+		}
+	}
+
+	// Validate Set clauses
+	for j, setClause := range change.Sets {
+		if setClause.Field == "" {
+			return &ValidationError{
+				Message: "set clause field must be non-empty",
+				Path:    fmt.Sprintf("%s.set[%d].field", path, j),
+			}
+		}
+	}
+
+	// Validate Where clause if present
+	if change.Where != nil {
+		if err := validateFilterSpec(change.Where, fmt.Sprintf("%s.where", path)); err != nil {
+			return err
 		}
 	}
 
@@ -167,17 +256,17 @@ func ValidateDependencies(deps *types.Dependencies) error {
 	if deps.Records == nil {
 		return &ValidationError{Message: "records must be an object", Path: "dependencies.records"}
 	}
-	if deps.FilterBounds == nil {
+	if deps.Filters == nil {
 		return &ValidationError{Message: "filterBounds must be an array", Path: "dependencies.filterBounds"}
 	}
-	if deps.RelationBounds == nil {
+	if deps.Includes == nil {
 		return &ValidationError{Message: "relationBounds must be an array", Path: "dependencies.relationBounds"}
 	}
 
 	return nil
 }
 
-func validateFilterSpec(spec *types.FilterSpec, path string) error {
+func validateFilterSpec(spec *types.Filter, path string) error {
 	if spec == nil {
 		return nil
 	}
@@ -201,8 +290,8 @@ func validateFilterSpec(spec *types.FilterSpec, path string) error {
 			return err
 		}
 	}
-	if spec.Atoms != nil {
-		for i, a := range *spec.Atoms {
+	if spec.Conditions != nil {
+		for i, a := range *spec.Conditions {
 			if err := validateFilterAtom(&a, fmt.Sprintf("%s.atoms[%d]", path, i)); err != nil {
 				return err
 			}
@@ -212,7 +301,7 @@ func validateFilterSpec(spec *types.FilterSpec, path string) error {
 	return nil
 }
 
-func validateFilterAtom(atom *types.FilterAtom, path string) error {
+func validateFilterAtom(atom *types.Condition, path string) error {
 	if atom.Field == "" {
 		return &ValidationError{Message: "field must be a non-empty string", Path: fmt.Sprintf("%s.field", path)}
 	}
@@ -237,58 +326,71 @@ func validateFilterAtom(atom *types.FilterAtom, path string) error {
 	return nil
 }
 
-func validateOrderBy(ob *types.OrderBySpec, path string) error {
+func validateOrderBy(ob *types.OrderBy, path string) error {
 	if ob.Field == "" {
 		return &ValidationError{Message: "field must be a non-empty string", Path: fmt.Sprintf("%s.field", path)}
 	}
-	if ob.Direction != "asc" && ob.Direction != "desc" {
-		return &ValidationError{Message: "direction must be 'asc' or 'desc'", Path: fmt.Sprintf("%s.direction", path)}
-	}
-	if ob.Nulls != nil && *ob.Nulls != "first" && *ob.Nulls != "last" {
-		return &ValidationError{Message: "nulls must be 'first' or 'last'", Path: fmt.Sprintf("%s.nulls", path)}
-	}
-	if ob.Collation != nil && *ob.Collation != "ci" && *ob.Collation != "cs" {
-		return &ValidationError{Message: "collation must be 'ci' or 'cs'", Path: fmt.Sprintf("%s.collation", path)}
-	}
+	// Descending, NullsFirst and CaseSensitive are bools - no validation needed
 	return nil
 }
 
-func validateCursor(cursor *types.CursorSpec, path string) error {
-	if len(cursor.Fields) == 0 {
-		return &ValidationError{Message: "cursor fields must not be empty", Path: fmt.Sprintf("%s.fields", path)}
-	}
-	if len(cursor.Values) != len(cursor.Fields) {
+func validatePagination(p *types.Pagination, path string) error {
+	// Can't mix forward and backward pagination
+	hasForward := p.First != nil || p.After != nil
+	hasBackward := p.Last != nil || p.Before != nil
+
+	if hasForward && hasBackward {
 		return &ValidationError{
-			Message: fmt.Sprintf("cursor values length (%d) must match fields length (%d)", len(cursor.Values), len(cursor.Fields)),
+			Message: "cannot mix forward pagination (first/after) with backward pagination (last/before)",
 			Path:    path,
 		}
 	}
+
+	// Validate First (must be positive)
+	if p.First != nil && *p.First <= 0 {
+		return &ValidationError{
+			Message: "first must be a positive integer",
+			Path:    fmt.Sprintf("%s.first", path),
+		}
+	}
+
+	// Validate Last (must be positive)
+	if p.Last != nil && *p.Last <= 0 {
+		return &ValidationError{
+			Message: "last must be a positive integer",
+			Path:    fmt.Sprintf("%s.last", path),
+		}
+	}
+
+	// After/Before are opaque strings, no validation needed
+	// (SDKs encode them as base64 JSON)
+
 	return nil
 }
 
-func validateInclude(include *types.IncludeSpec, path string) error {
-	if include.Where != nil {
-		if err := validateFilterSpec(include.Where, fmt.Sprintf("%s.where", path)); err != nil {
+func validateInclude(include *types.Include, path string) error {
+	// Validate query if present
+	if include.Query != nil {
+		if err := validateQuery(include.Query, fmt.Sprintf("%s.query", path)); err != nil {
 			return err
 		}
 	}
-	if include.OrderBy != nil {
-		for i, ob := range *include.OrderBy {
-			if err := validateOrderBy(&ob, fmt.Sprintf("%s.orderBy[%d]", path, i)); err != nil {
-				return err
+
+	// Validate kind if present
+	if include.Kind != nil {
+		validKinds := map[string]bool{"some": true, "every": true, "none": true}
+		if !validKinds[*include.Kind] {
+			return &ValidationError{
+				Message: "kind must be 'some', 'every', or 'none'",
+				Path:    fmt.Sprintf("%s.kind", path),
 			}
 		}
 	}
-	if include.Take != nil && *include.Take < 0 {
-		return &ValidationError{Message: "take must be non-negative", Path: fmt.Sprintf("%s.take", path)}
-	}
-	if include.Skip != nil && *include.Skip < 0 {
-		return &ValidationError{Message: "skip must be non-negative", Path: fmt.Sprintf("%s.skip", path)}
-	}
+
 	// Recursively validate nested includes
-	if include.Include != nil {
-		for relation, nested := range include.Include {
-			if err := validateInclude(&nested, fmt.Sprintf("%s.include[%s]", path, relation)); err != nil {
+	if include.Includes != nil {
+		for i, nested := range include.Includes {
+			if err := validateInclude(&nested, fmt.Sprintf("%s.includes[%d]", path, i)); err != nil {
 				return err
 			}
 		}
