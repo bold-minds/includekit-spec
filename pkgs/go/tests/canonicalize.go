@@ -15,6 +15,11 @@ import (
 // It recursively sorts all object keys in lexicographic order and marshals
 // the result to JSON. This ensures deterministic output for hashing.
 //
+// Note: This is a simplified implementation focused on deterministic key ordering
+// for consistent shapeId generation. It does NOT implement the full RFC 8785
+// specification (e.g., number normalization). For shapeId computation purposes,
+// key ordering is sufficient to ensure determinism.
+//
 // Returns an error if the object cannot be marshaled to JSON.
 func Canonicalize(obj interface{}) (string, error) {
 	if obj == nil {

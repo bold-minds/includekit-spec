@@ -57,6 +57,10 @@ export interface Filter {
  */
 export interface Condition {
   field: string;
+  /**
+   * Optional path for nested field access (e.g., ['address', 'city'])
+   */
+  field_path?: string[];
   op:
     | (
         | "eq"
@@ -86,6 +90,10 @@ export interface Condition {
       )
     | string;
   value?: unknown;
+  /**
+   * @deprecated
+   * Deprecated: use field_path instead
+   */
   path?: string[];
 }
 /**
@@ -132,7 +140,7 @@ export interface Mutation {
 export interface Change {
   model: string;
   action: "insert" | "update" | "delete";
-  set?: KV[];
+  sets?: KV[];
   where?: Filter;
 }
 /**

@@ -8,6 +8,11 @@
           "type": "string",
           "minLength": 1
         },
+        "field_path": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional path for nested field access (e.g., ['address', 'city'])"
+        },
         "op": {
           "oneOf": [
             {
@@ -29,7 +34,9 @@
         "value": {},
         "path": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": { "type": "string" },
+          "deprecated": true,
+          "description": "Deprecated: use field_path instead"
         }
       },
       "required": ["field", "op"]
@@ -177,7 +184,7 @@
         "action": {
           "enum": ["insert", "update", "delete"]
         },
-        "set": {
+        "sets": {
           "type": "array",
           "items": { "$ref": "#/$defs/KV" }
         },
