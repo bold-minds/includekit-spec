@@ -4,42 +4,127 @@ Thanks for helping improve IncludeKit’s spec. This repo is the **source of tru
 
 ## Code of Conduct
 
-We follow the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+We pledge to make participation in our community a harassment-free experience for everyone. Please see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for full details.
 
-## Design principles
+## 🚀 Development Process
 
-1. **Single schema**: `/schema/v*.json` generates all language artifacts.
-2. **Determinism**: JSON Canonicalization (JCS) + SHA-256 → `shapeId`.
-3. **Safety over cleverness**: Unknown operators must be expressible as `custom:*`; downstream engines will invalidate conservatively.
-4. **SemVer discipline**: The schema’s version drives the packages’ major versions.
+We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
-## Development workflow
+### Pull Requests
 
-1. **Discuss changes** in an issue (motivation, ORM mappings, examples).
-2. **Update schema** (`schema/v0-1-0.json`) and documentation.
-3. **Run the test suite** (auto-regenerates code):
+1. Fork the repo and create your branch from `main`.
+2. If you've added code that should be tested, add tests.
+3. If you've changed the schema, regenerate types and update documentation.
+4. Ensure the test suite passes.
+5. Make sure your code follows the project style.
+6. Issue that pull request!
 
-   ```bash
-   ./scripts/test.sh
-   ```
+## 🏗️ Development Setup
 
-   This automatically:
-   - Builds the Go codegen tool
-   - Regenerates TypeScript types
-   - Builds testkits
-   - Runs all tests (TS + Go)
-   - Verifies conformance vectors
-   - Checks no-runtime constraints
+### Prerequisites
 
-4. **Update test vectors** if canonical output or shapeId expectations change:
+- **Node.js** ≥ 20
+- **Go** ≥ 1.22
+- **Git**
 
-   ```bash
-   go run tools/tests/generate-vectors.go
-   ```
+### Clone and Setup
 
-   Vectors are in `tools/tests/vectors/query-shapes.json`.
+```bash
+git clone https://github.com/bold-minds/includekit-spec.git
+cd includekit-spec
+./scripts/test.sh
+```
 
-### Open a PR with:
+This will:
+- Build the code generator
+- Generate TypeScript and Go types
+- Run all tests (TypeScript + Go)
+- Verify the no-runtime constraint
+
+## 🧪 Testing
+
+We maintain high test coverage and all contributions should include appropriate tests.
+
+### TypeScript Tests
+
+```bash
+cd pkgs/ts/tests
+npm install
+npm run build
+npm test
+```
+
+### Go Tests
+
+```bash
+cd pkgs/go
+go test -v ./...
+go test -race ./...  # With race detection
+go test -cover ./... # With coverage
+```
+
+### Full Test Suite
+
+```bash
+./scripts/test.sh
+```
+
+## 📋 Commit Guidelines
+
+We follow conventional commits for clear history:
+
+- `feat:` new feature (e.g., `feat: add pagination support`)
+- `fix:` bug fix (e.g., `fix: correct schema field name`)
+- `docs:` documentation changes (e.g., `docs: update README examples`)
+- `test:` adding or updating tests (e.g., `test: add edge cases for filters`)
+- `refactor:` code refactoring (e.g., `refactor: simplify canonicalization`)
+- `perf:` performance improvements (e.g., `perf: optimize shapeId computation`)
+- `chore:` maintenance tasks (e.g., `chore: bump version to v0.2.0`)
+
+## 🐛 Bug Reports
+
+Great bug reports include:
+
+1. **Quick summary** and/or background
+2. **Steps to reproduce** - Be specific! Provide sample code if possible
+3. **What you expected** to happen
+4. **What actually happens**
+5. **Notes** (why you think this might be happening, things you tried)
+
+### Bug Report Template
+
+```markdown
+**Describe the bug**
+A clear description of what the bug is.
+
+**To Reproduce**
+Steps to reproduce:
+1. ...
+2. ...
+
+**Expected behavior**
+What you expected to happen.
+
+**Actual behavior**
+What actually happened.
+
+**Environment**
+- OS: [e.g., macOS 14.0]
+- Node.js: [e.g., 20.9.0]
+- Go: [e.g., 1.22.0]
+- Package version: [e.g., 0.1.0]
+```
+
+## 💡 Feature Requests
+
+We welcome feature requests! Please provide:
+
+- **Use case**: Describe the problem you're trying to solve
+- **Proposed solution**: How you envision the feature working
+- **Alternatives considered**: Other approaches you've thought about
+- **Additional context**: Any other relevant information
+
+## ✅ Pull Request Checklist
 
 - [ ] Schema diff
 - [ ] README.md changes

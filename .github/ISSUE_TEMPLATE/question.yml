@@ -1,0 +1,94 @@
+name: ❓ Question
+description: Ask a question about usage or implementation
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question? We're here to help! 
+        
+        **Note:** For general discussions, consider using [GitHub Discussions](https://github.com/bold-minds/includekit-spec/discussions) instead.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+      placeholder: How do I...? / What is the best way to...?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What are you trying to accomplish? What have you tried so far?
+      placeholder: |
+        I'm trying to...
+        I've looked at...
+        I tried...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Code Sample (if applicable)
+      description: If relevant, provide a code sample showing what you're working with
+      render: typescript
+      placeholder: |
+        import { Statement } from '@includekit/spec';
+        
+        // Your code here
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Language
+      description: Which language are you using?
+      options:
+        - TypeScript
+        - Go
+        - Both
+        - General question
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What is your question about?
+      options:
+        - Schema design
+        - Type definitions
+        - Validators
+        - Shape ID computation
+        - Mock engine
+        - Integration with ORMs
+        - Performance
+        - Best practices
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any other relevant information
+      placeholder: Any additional context...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and discussions for similar questions
+          required: true
+        - label: I have read the [README](https://github.com/bold-minds/includekit-spec/blob/main/README.md)
+          required: true
+        - label: I have checked the [schema documentation](https://github.com/bold-minds/includekit-spec/blob/main/schema/README.md)
+          required: true

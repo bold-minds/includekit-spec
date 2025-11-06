@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/bold-minds/includekit-spec/discussions
+    about: For general questions, ideas, and community discussions
+  - name: 🔒 Security Issue
+    url: https://github.com/bold-minds/includekit-spec/blob/main/SECURITY.md
+    about: Please report security vulnerabilities privately via the security policy

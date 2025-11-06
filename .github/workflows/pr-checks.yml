@@ -1,0 +1,235 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  pr-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const changes = additions + deletions;
+            
+            let size = 'XS';
+            let color = '0e8a16'; // green
+            
+            if (changes > 1000) {
+              size = 'XXL';
+              color = 'b60205'; // red
+            } else if (changes > 500) {
+              size = 'XL';
+              color = 'ff9800'; // orange
+            } else if (changes > 250) {
+              size = 'L';
+              color = 'ffa500'; // orange
+            } else if (changes > 100) {
+              size = 'M';
+              color = 'ffeb3b'; // yellow
+            } else if (changes > 10) {
+              size = 'S';
+              color = '4caf50'; // light green
+            }
+            
+            // Remove existing size labels
+            const currentLabels = pr.labels.map(l => l.name);
+            const sizeLabels = currentLabels.filter(l => l.startsWith('size/'));
+            
+            for (const label of sizeLabels) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                name: label
+              });
+            }
+            
+            // Add new size label
+            const labelName = `size/${size}`;
+            
+            // Try to create the label if it doesn't exist
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: labelName,
+                color: color,
+                description: `PR size: ${size} (${changes} lines changed)`
+              });
+            } catch (error) {
+              // Label might already exist, that's fine
+            }
+            
+            // Add the label to the PR
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels: [labelName]
+            });
+            
+            // Add a comment if the PR is very large
+            if (size === 'XXL' || size === 'XL') {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `⚠️ **Large PR Detected**: This PR has ${changes} lines changed. Consider breaking it into smaller PRs for easier review.\n\n- Additions: ${additions}\n- Deletions: ${deletions}\n- Total: ${changes}`
+              });
+            }
+
+  commit-lint:
+    name: Lint Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install commitlint
+        run: |
+          npm install -g @commitlint/cli @commitlint/config-conventional
+
+      - name: Create commitlint config
+        run: |
+          echo "module.exports = {extends: ['@commitlint/config-conventional']}" > commitlint.config.js
+
+      - name: Validate PR commits
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get all commits in the PR
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          
+          # Fetch PR commits
+          gh pr view $PR_NUMBER --json commits --jq '.commits[].messageHeadline' > commits.txt
+          
+          echo "Checking commit messages:"
+          cat commits.txt
+          
+          # Check each commit message
+          FAILED=0
+          while IFS= read -r message; do
+            echo "Checking: $message"
+            echo "$message" | npx commitlint || FAILED=1
+          done < commits.txt
+          
+          if [ $FAILED -eq 1 ]; then
+            echo "❌ Some commit messages don't follow conventional commits format"
+            echo ""
+            echo "Expected format: <type>(<scope>): <subject>"
+            echo "Types: feat, fix, docs, style, refactor, test, chore"
+            echo ""
+            echo "Examples:"
+            echo "  feat: add pagination support"
+            echo "  fix: correct schema field validation"
+            echo "  docs: update README examples"
+            exit 1
+          fi
+          
+          echo "✅ All commit messages are valid"
+
+  auto-label:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Label based on files changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Get files changed
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const labels = new Set();
+            
+            for (const file of files.data) {
+              const path = file.filename;
+              
+              // Language-specific labels
+              if (path.startsWith('pkgs/ts/') || path.includes('.ts') || path.includes('.js')) {
+                labels.add('typescript');
+              }
+              if (path.startsWith('pkgs/go/') || path.includes('.go')) {
+                labels.add('go');
+              }
+              
+              // Area labels
+              if (path.startsWith('schema/')) {
+                labels.add('schema');
+              }
+              if (path.startsWith('docs/') || path.includes('README') || path.includes('CONTRIBUTING')) {
+                labels.add('documentation');
+              }
+              if (path.includes('test') || path.includes('.test.')) {
+                labels.add('tests');
+              }
+              if (path.startsWith('.github/workflows/')) {
+                labels.add('ci/cd');
+              }
+              if (path.startsWith('codegen/')) {
+                labels.add('codegen');
+              }
+            }
+            
+            // Add labels if any were found
+            if (labels.size > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: Array.from(labels)
+              });
+            }
+
+  title-check:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const title = pr.title;
+            
+            // Check if title follows conventional commits format
+            const conventionalPattern = /^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: .+/;
+            
+            if (!conventionalPattern.test(title)) {
+              core.setFailed(
+                `❌ PR title doesn't follow Conventional Commits format.\n\n` +
+                `Expected: <type>(<scope>): <description>\n` +
+                `Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert\n\n` +
+                `Examples:\n` +
+                `  feat: add pagination support\n` +
+                `  fix(schema): correct field validation\n` +
+                `  docs: update TypeScript examples\n\n` +
+                `Current title: "${title}"`
+              );
+            } else {
+              console.log('✅ PR title follows Conventional Commits format');
+            }

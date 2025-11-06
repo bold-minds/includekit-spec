@@ -1,5 +1,12 @@
 # IncludeKit Spec
 
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/bold-minds/includekit-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/bold-minds/includekit-spec/actions/workflows/ci.yml)
+[![Go Version](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)](https://golang.org/doc/go1.22)
+[![Node Version](https://img.shields.io/badge/Node-20%2B-339933?logo=node.js)](https://nodejs.org/)
+[![Latest Release](https://img.shields.io/github/v/release/bold-minds/includekit-spec?logo=github&color=blueviolet)](https://github.com/bold-minds/includekit-spec/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/bold-minds/includekit-spec/blob/main/CONTRIBUTING.md)
+
 The **single source of truth** for IncludeKit's Universal Format.  
 This repo defines the canonical, language-agnostic **specification** used by:
 - SDK adapters (e.g., Prisma) to describe **read queries** and **write events**
@@ -77,15 +84,17 @@ npm install @includekit/spec
 ```
 
 ```typescript
-import type { QueryShape } from '@includekit/spec';
+import type { Statement, Query, Filter } from '@includekit/spec';
 
-const shape: QueryShape = {
-  model: 'Post',
-  where: {
-    atoms: [{ field: 'published', op: 'eq', value: true }]
-  },
-  orderBy: [{ field: 'createdAt', direction: 'desc' }],
-  take: 10,
+const statement: Statement = {
+  query: {
+    model: 'Post',
+    where: {
+      conditions: [{ field: 'published', op: 'eq', value: true }]
+    },
+    order_by: [{ field: 'createdAt', descending: true }],
+    limit: 10,
+  }
 };
 ```
 
@@ -98,12 +107,18 @@ go get github.com/bold-minds/includekit-spec/go
 ```go
 import "github.com/bold-minds/includekit-spec/go/types"
 
-shape := types.QueryShape{
-  Model: "Post",
-  Where: &types.FilterSpec{
-    Atoms: &[]types.FilterAtom{
-      {Field: "published", Op: "eq", Value: types.ScalarBool(true)},
+statement := types.Statement{
+  Query: &types.Query{
+    Model: "Post",
+    Where: &types.Filter{
+      Conditions: &[]types.Condition{
+        {Field: "published", Op: "eq", Value: true},
+      },
     },
+    OrderBy: &[]types.OrderBy{
+      {Field: "createdAt", Descending: boolPtr(true)},
+    },
+    Limit: intPtr(10),
   },
 }
 ```
@@ -176,6 +191,26 @@ Follows [Semantic Versioning](https://semver.org/):
 
 ---
 
-## License
+## 🤝 Contributing
 
-Apache-2.0. See [LICENSE](LICENSE).
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Development setup
+- Testing requirements
+- Pull request process
+- Commit conventions
+
+## 📄 License
+
+This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Community
+
+- **Questions**: Open a [GitHub Discussion](https://github.com/bold-minds/includekit-spec/discussions)
+- **Bugs**: Report via [GitHub Issues](https://github.com/bold-minds/includekit-spec/issues)
+- **Security**: See [SECURITY.md](SECURITY.md) for responsible disclosure
+
+## 📚 Related Resources
+
+- **IncludeKit Docs**: [includekit.dev](https://includekit.dev) (coming soon)
+- **Examples**: Check out the test vectors in `tools/tests/vectors/`
+- **Code of Conduct**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
